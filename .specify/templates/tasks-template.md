@@ -1,5 +1,4 @@
 ---
-
 description: "Task list template for feature implementation"
 ---
 
@@ -25,21 +24,21 @@ description: "Task list template for feature implementation"
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
 
-<!-- 
+<!--
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
+
   The /speckit.tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-  
+
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-  
+
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
@@ -69,6 +68,32 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
 
+**Constitution-Driven Tasks** (include relevant tasks based on feature type):
+
+_Mobile-Responsive Design_:
+
+- [ ] TXXX Setup responsive breakpoints and mobile-first CSS framework
+- [ ] TXXX Configure touch-friendly UI components and interactions
+- [ ] TXXX Implement image optimization pipeline for jewelry photos
+
+_Security & Privacy_:
+
+- [ ] TXXX Setup secure payment processing infrastructure (PCI DSS compliance)
+- [ ] TXXX Implement user authentication with session management
+- [ ] TXXX Configure HTTPS, CSP headers, and security middleware
+
+_Performance & Scalability_:
+
+- [ ] TXXX Setup CDN and image optimization for product photos
+- [ ] TXXX Configure database indexing for product search/filtering
+- [ ] TXXX Implement caching strategy for product catalogs
+
+_E-commerce Integration_:
+
+- [ ] TXXX Setup payment gateway integration (Stripe, PayPal, etc.)
+- [ ] TXXX Configure inventory tracking and low-stock notifications
+- [ ] TXXX Setup shipping calculation and tax computation services
+
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
@@ -83,8 +108,8 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 1
 
@@ -94,6 +119,14 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
+
+**Constitution-Aligned Tasks** (add as relevant to user story):
+
+- [ ] TXXX [US1] Optimize mobile UI/UX for jewelry browsing (Mobile-Responsive Design)
+- [ ] TXXX [US1] Implement secure data handling and user consent (Security & Privacy)
+- [ ] TXXX [US1] Add performance monitoring and image optimization (Performance)
+- [ ] TXXX [US1] Ensure customer-first workflow and intuitive navigation (Customer Experience)
+- [ ] TXXX [US1] Add admin efficiency features for merchant operations (Admin Efficiency)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -107,8 +140,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 2
 
@@ -129,8 +162,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 3
 
