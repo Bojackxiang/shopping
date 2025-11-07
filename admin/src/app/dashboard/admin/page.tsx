@@ -1,6 +1,4 @@
-import PageContainer from '@/components/layout/page-container';
-import AdminView from '@/features/user/admin-view';
-import React from 'react';
+import AdminView from '@/features/user/admin/view/admin-view';
 
 const page = () => {
   return <AdminView />;

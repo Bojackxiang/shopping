@@ -1,4 +1,4 @@
-import CustomerView from '@/features/customer/customer-view';
+import CustomerView from '@/features/user/customer/view/customer-view';
 import React from 'react';
 
 export const metadata = {

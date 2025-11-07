@@ -1,9 +1,14 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
-import { Button } from '@/components/ui/button';
+import { IconRefresh } from '@tabler/icons-react';
 
+import PageContainer from '@/components/layout/page-container';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { Separator } from '@/components/ui/separator';
+import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
 import {
   Table,
   TableBody,
@@ -12,81 +17,53 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import PageContainer from '@/components/layout/page-container';
-import { Heading } from '@/components/ui/heading';
-import { Separator } from '@radix-ui/react-dropdown-menu';
-import { IconRefresh } from '@tabler/icons-react';
 
-interface AdminUser {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  imageUrl?: string;
-  emailAddresses: Array<{
-    emailAddress: string;
-    id: string;
-  }>;
-  createdAt: number;
-  updatedAt: number;
-  lastSignInAt?: number;
-  publicMetadata?: {
-    role?: string;
-  };
-}
+import { CustomerResponse } from '../types/customer-type';
 
-interface AdminUserResponse {
-  data: AdminUser[];
-  totalCount: number;
-  pagination: {
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-const AdminTable = () => {
-  const [adminUsers, setAdminUsers] = useState<AdminUserResponse | null>(null);
+const CustomerTable = () => {
+  const [customers, setCustomers] = useState<CustomerResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
 
-  const fetchAdminUsers = async (offset: number = 0) => {
+  const fetchCustomers = async (offset: number = 0) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/user/admin?limit=${pageSize}&offset=${offset}`
+        `/api/user/customer?limit=${pageSize}&offset=${offset}`
       );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: AdminUserResponse = await response.json();
-      setAdminUsers(data);
+      const data: CustomerResponse = await response.json();
+      setCustomers(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch admins');
-      console.error('Error fetching admins:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch customers'
+      );
+      console.error('Error fetching customers:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAdminUsers(0);
+    fetchCustomers(0);
   }, []);
 
   const onNextPageClick = () => {
     const nextOffset = (currentPage + 1) * pageSize;
     setCurrentPage(currentPage + 1);
-    fetchAdminUsers(nextOffset);
+    fetchCustomers(nextOffset);
   };
 
   const onPreviousPageClick = () => {
     const prevOffset = Math.max(0, (currentPage - 1) * pageSize);
     setCurrentPage(Math.max(0, currentPage - 1));
-    fetchAdminUsers(prevOffset);
+    fetchCustomers(prevOffset);
   };
 
   const formatDate = (timestamp: number) => {
@@ -97,32 +74,49 @@ const AdminTable = () => {
     });
   };
 
-  const canGoNext = adminUsers?.pagination.hasMore || false;
+  const canGoNext = customers?.pagination.hasMore || false;
   const canGoPrev = currentPage > 0;
 
   if (loading) {
     return <DataTableSkeleton columnCount={7} rowCount={10} filterCount={0} />;
   }
 
+  if (error) {
+    return (
+      <div className='rounded-lg border border-red-200 bg-red-50 p-4'>
+        <p className='text-red-700'>Error: {error}</p>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => fetchCustomers(currentPage * pageSize)}
+          className='mt-2'
+        >
+          <IconRefresh className='mr-2 h-4 w-4' />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className='space-y-4'>
-      {adminUsers && (
+      {customers && (
         <>
           {/* Statistics Card */}
           <div className='bg-card rounded-lg border p-4'>
             <div className='flex items-center justify-between'>
               <div className='space-y-1'>
-                <h3 className='text-lg font-medium'>Admin User</h3>
+                <h3 className='text-lg font-medium'>Customer Overview</h3>
                 <p className='text-muted-foreground text-sm'>
-                  Total: {adminUsers.totalCount} Admin / Normal User • Page{' '}
+                  Total: {customers.totalCount} customers • Page{' '}
                   {currentPage + 1} of{' '}
-                  {Math.ceil(adminUsers.totalCount / pageSize)}
+                  {Math.ceil(customers.totalCount / pageSize)}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* AdminUser Table */}
+          {/* Customer Table */}
           <div className='bg-card rounded-lg border'>
             <Table>
               <TableHeader>
@@ -137,15 +131,15 @@ const AdminTable = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {adminUsers.data.map((admin) => {
+                {customers.data.map((customer) => {
                   return (
-                    <TableRow key={admin.id}>
+                    <TableRow key={customer.id}>
                       <TableCell>
-                        {admin.imageUrl ? (
+                        {customer.imageUrl ? (
                           <img
-                            src={admin.imageUrl}
+                            src={customer.imageUrl}
                             alt={
-                              `${admin.firstName || ''} ${admin.lastName || ''}`.trim() ||
+                              `${customer.firstName || ''} ${customer.lastName || ''}`.trim() ||
                               'User'
                             }
                             className='h-10 w-10 rounded-full object-cover'
@@ -153,8 +147,8 @@ const AdminTable = () => {
                         ) : (
                           <div className='bg-muted flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium'>
                             {(
-                              (admin.firstName?.[0] || '') +
-                                (admin.lastName?.[0] || '') || '?'
+                              (customer.firstName?.[0] || '') +
+                                (customer.lastName?.[0] || '') || '?'
                             ).toUpperCase()}
                           </div>
                         )}
@@ -162,36 +156,36 @@ const AdminTable = () => {
                       <TableCell>
                         <div className='space-y-1'>
                           <div className='font-medium'>
-                            {admin.firstName || admin.lastName
-                              ? `${admin.firstName || ''} ${admin.lastName || ''}`.trim()
+                            {customer.firstName || customer.lastName
+                              ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
                               : 'No name provided'}
                           </div>
                           <div className='text-muted-foreground text-xs'>
-                            ID: {admin.id.slice(-8)}
+                            ID: {customer.id.slice(-8)}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className='font-mono text-sm'>
-                        {admin.emailAddresses[0]?.emailAddress || 'No email'}
+                        {customer.emailAddresses[0]?.emailAddress || 'No email'}
                       </TableCell>
-                      <TableCell className='text-center'>
+                      <TableCell>
                         <Badge
                           variant={
-                            admin.publicMetadata?.role === 'admin'
+                            customer.publicMetadata?.role === 'admin'
                               ? 'default'
                               : 'secondary'
                           }
                           className='capitalize'
                         >
-                          {admin.publicMetadata?.role || 'Non Admin'}
+                          {customer.publicMetadata?.role || 'Customer'}
                         </Badge>
                       </TableCell>
                       <TableCell className='text-muted-foreground text-sm'>
-                        {formatDate(admin.createdAt)}
+                        {formatDate(customer.createdAt)}
                       </TableCell>
                       <TableCell className='text-muted-foreground text-sm'>
-                        {admin.lastSignInAt
-                          ? formatDate(admin.lastSignInAt)
+                        {customer.lastSignInAt
+                          ? formatDate(customer.lastSignInAt)
                           : 'Never'}
                       </TableCell>
                       <TableCell>
@@ -210,8 +204,8 @@ const AdminTable = () => {
           <div className='flex items-center justify-between'>
             <div className='text-muted-foreground text-sm'>
               Showing {currentPage * pageSize + 1} to{' '}
-              {Math.min((currentPage + 1) * pageSize, adminUsers.totalCount)} of{' '}
-              {adminUsers.totalCount} entries
+              {Math.min((currentPage + 1) * pageSize, customers.totalCount)} of{' '}
+              {customers.totalCount} entries
             </div>
             <div className='flex gap-2'>
               <Button
@@ -238,14 +232,14 @@ const AdminTable = () => {
   );
 };
 
-const AdminView = () => {
+const CustomerView = () => {
   return (
     <PageContainer scrollable={false}>
       <div className='flex flex-1 flex-col space-y-4'>
         <div className='flex items-start justify-between'>
           <Heading
-            title='Admin Users'
-            description='Manage admin accounts and user data.'
+            title='Customers'
+            description='Manage customer accounts and user data.'
           />
           <div className='flex gap-2'>
             <Button
@@ -264,11 +258,11 @@ const AdminView = () => {
             <DataTableSkeleton columnCount={7} rowCount={10} filterCount={0} />
           }
         >
-          <AdminTable />
+          <CustomerTable />
         </Suspense>
       </div>
     </PageContainer>
   );
 };
 
-export default AdminView;
+export default CustomerView;
