@@ -115,11 +115,18 @@ export async function GET(
 // 可选：添加 PATCH 方法来更新用户的 Public Metadata
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
     const body = await req.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
 
     const clerk = await clerkClient();
 
@@ -141,11 +148,36 @@ export async function PATCH(
     });
   } catch (error: any) {
     console.error('Error updating user:', error);
+
+    // 处理不同类型的错误
+    if (error.status === 404) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'User not found',
+          userId: (await params).userId
+        },
+        { status: 404 }
+      );
+    }
+
+    if (error.status === 403) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Access denied',
+          userId: (await params).userId
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to update user',
-        message: error.message || 'Unknown error'
+        message: error.message || 'Unknown error',
+        userId: (await params).userId
       },
       { status: 500 }
     );
