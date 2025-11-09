@@ -4,13 +4,9 @@ import {
   IconUsers,
   IconUserCheck,
   IconShield,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconArrowUp,
-  IconArrowDown,
-  IconArrowsSort
+  IconArrowsSort,
+  IconChevronDown,
+  IconColumns
 } from '@tabler/icons-react';
 import {
   useReactTable,
@@ -21,11 +17,22 @@ import {
   flexRender,
   type ColumnDef,
   type SortingState,
-  type ColumnFiltersState
+  type ColumnFiltersState,
+  type VisibilityState
 } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
 import {
   Table,
@@ -77,7 +84,8 @@ type OrganizationMembership = {
 export const AdminTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
 
   const { data, isLoading, error, refetch } = useOrgMemberList();
   console.log(JSON.stringify(data, null, 2));
@@ -107,6 +115,33 @@ export const AdminTable = () => {
   // Define columns using TanStack Table
   const columns = useMemo<ColumnDef<OrganizationMembership>[]>(
     () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label='Select all'
+            className='translate-y-[2px]'
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label='Select row'
+            className='translate-y-[2px]'
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 48
+      },
       {
         accessorKey: 'publicUserData.imageUrl',
         id: 'avatar',
@@ -143,7 +178,17 @@ export const AdminTable = () => {
           `${row.publicUserData?.firstName || ''} ${row.publicUserData?.lastName || ''}`.trim() ||
           'No name',
         id: 'member',
-        header: 'Member',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-2 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Member
+            <IconArrowsSort className='ml-2 h-4 w-4' />
+          </Button>
+        ),
         size: 180,
         cell: ({ row }) => {
           const userData = row.original.publicUserData;
@@ -164,7 +209,17 @@ export const AdminTable = () => {
       {
         accessorKey: 'publicUserData.identifier',
         id: 'email',
-        header: 'Email',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-2 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Email
+            <IconArrowsSort className='ml-2 h-4 w-4' />
+          </Button>
+        ),
         size: 220,
         cell: ({ getValue }) => (
           <span
@@ -178,7 +233,17 @@ export const AdminTable = () => {
       {
         accessorKey: 'organization.name',
         id: 'organization',
-        header: 'Organization',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-2 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Organization
+            <IconArrowsSort className='ml-2 h-4 w-4' />
+          </Button>
+        ),
         size: 180,
         cell: ({ row }) => {
           const orgData = row.original.organization;
@@ -240,7 +305,17 @@ export const AdminTable = () => {
       },
       {
         accessorKey: 'createdAt',
-        header: 'Joined',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-2 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Joined
+            <IconArrowsSort className='ml-2 h-4 w-4' />
+          </Button>
+        ),
         size: 110,
         cell: ({ getValue }) => (
           <div className='text-muted-foreground text-center text-sm whitespace-nowrap'>
@@ -250,7 +325,17 @@ export const AdminTable = () => {
       },
       {
         accessorKey: 'updatedAt',
-        header: 'Updated',
+        header: ({ column }) => (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='-ml-2 h-8'
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Updated
+            <IconArrowsSort className='ml-2 h-4 w-4' />
+          </Button>
+        ),
         size: 110,
         cell: ({ getValue }) => (
           <div className='text-muted-foreground text-center text-sm whitespace-nowrap'>
@@ -262,6 +347,7 @@ export const AdminTable = () => {
         id: 'actions',
         header: 'Actions',
         enableSorting: false,
+        enableHiding: false,
         size: 100,
         cell: ({ row }) => {
           const userData = row.original.publicUserData;
@@ -284,15 +370,18 @@ export const AdminTable = () => {
     state: {
       sorting,
       columnFilters,
-      globalFilter
+      columnVisibility,
+      rowSelection
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    enableRowSelection: true,
     initialState: {
       pagination: {
         pageSize: 10
@@ -379,19 +468,46 @@ export const AdminTable = () => {
   return (
     <div className='space-y-6'>
       {/* Search and Controls */}
-      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='flex w-full flex-1 gap-4'>
-          <div className='relative w-full flex-1 sm:max-w-sm'>
-            <input
-              type='text'
-              placeholder='Search members...'
-              value={globalFilter ?? ''}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-            />
-          </div>
+      <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-3'>
+          <Input
+            placeholder='Filter by email...'
+            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+            onChange={(event) =>
+              table.getColumn('email')?.setFilterValue(event.target.value)
+            }
+            className='w-full sm:max-w-sm'
+          />
         </div>
         <div className='flex items-center gap-2'>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='sm' className='ml-auto'>
+                <IconColumns className='mr-2 h-4 w-4' />
+                Columns
+                <IconChevronDown className='ml-2 h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-48'>
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className='capitalize'
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant='outline'
             size='sm'
@@ -447,61 +563,34 @@ export const AdminTable = () => {
         <div className='text-muted-foreground block text-center text-xs sm:hidden'>
           ← Swipe horizontally to view all columns →
         </div>
-        <div className='bg-card w-full rounded-lg border'>
-          <div className='w-full overflow-x-auto sm:overflow-visible'>
+        <div className='overflow-hidden rounded-md border'>
+          <div className='w-full overflow-x-auto'>
             <Table className='min-w-max sm:min-w-full'>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className={
-                          header.column.getCanSort()
-                            ? 'cursor-pointer whitespace-nowrap select-none'
-                            : 'whitespace-nowrap'
-                        }
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        <div className='flex items-center gap-2'>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                          {header.column.getCanSort() && (
-                            <span className='text-muted-foreground'>
-                              {header.column.getIsSorted() === 'asc' ? (
-                                <IconArrowUp className='h-4 w-4' />
-                              ) : header.column.getIsSorted() === 'desc' ? (
-                                <IconArrowDown className='h-4 w-4' />
-                              ) : (
-                                <IconArrowsSort className='h-4 w-4' />
-                              )}
-                            </span>
-                          )}
-                        </div>
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className='h-24 text-center'
-                    >
-                      No results found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
+                {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                    >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className='whitespace-nowrap'>
+                        <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -510,6 +599,15 @@ export const AdminTable = () => {
                       ))}
                     </TableRow>
                   ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className='h-24 text-center'
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -517,85 +615,28 @@ export const AdminTable = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-          <div className='text-muted-foreground text-center text-sm lg:text-left'>
-            Showing{' '}
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              1}{' '}
-            to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
-            )}{' '}
-            of {table.getFilteredRowModel().rows.length} results
+        <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-between'>
+          <div className='text-muted-foreground text-sm'>
+            {table.getFilteredSelectedRowModel().rows.length} of{' '}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
-
-          <div className='flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-end'>
-            <div className='flex items-center gap-1'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-                className='h-8 w-8 p-0'
-              >
-                <IconChevronsLeft className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className='h-8 w-8 p-0'
-              >
-                <IconChevronLeft className='h-4 w-4' />
-              </Button>
-
-              <div className='flex items-center gap-2 px-2'>
-                <span className='text-sm whitespace-nowrap'>
-                  Page {table.getState().pagination.pageIndex + 1} of{' '}
-                  {table.getPageCount()}
-                </span>
-              </div>
-
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className='h-8 w-8 p-0'
-              >
-                <IconChevronRight className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-                className='h-8 w-8 p-0'
-              >
-                <IconChevronsRight className='h-4 w-4' />
-              </Button>
-            </div>
-
-            <div className='flex items-center gap-2'>
-              <span className='text-sm whitespace-nowrap'>Rows per page:</span>
-              <select
-                value={table.getState().pagination.pageSize}
-                onChange={(e) => {
-                  table.setPageSize(Number(e.target.value));
-                }}
-                className='border-input bg-background ring-offset-background focus-visible:ring-ring h-8 rounded-md border px-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-              >
-                {[5, 10, 20, 30, 50].map((pageSize) => (
-                  <option key={pageSize} value={pageSize}>
-                    {pageSize}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
           </div>
         </div>
       </div>
