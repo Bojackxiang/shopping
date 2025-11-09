@@ -12,7 +12,6 @@ export const useOrgMemberList = (params: OrgMemberListParams = {}) => {
   const { enabled = true } = params;
 
   const url = enabled ? `/api/org` : null;
-  console.log('url: ', url);
 
   return useApi(url, {
     revalidateOnMount: true,

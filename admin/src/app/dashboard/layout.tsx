@@ -22,7 +22,6 @@ export default async function DashboardLayout({
   return (
     <AdminGuardRail>
       <KBar>
-        test component
         <SidebarProvider defaultOpen={defaultOpen}>
           <AppSidebar />
           <SidebarInset>

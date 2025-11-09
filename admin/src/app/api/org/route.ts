@@ -21,7 +21,6 @@ export async function GET(
 
     const client = await clerkClient();
     const organizationList = await client.organizations.getOrganizationList();
-    console.log('organizationList: ', organizationList);
 
     const adminOrg = organizationList.data.find(
       (org) => org.name.toLowerCase() === 'admin' || org.slug === 'admin'
