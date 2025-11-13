@@ -191,7 +191,8 @@ const CustomerTable = ({ searchParams }: CustomerTableProps) => {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
+      {/* {pagination && pagination.totalPages > 1 && ( */}
+      {pagination && pagination.totalPages >= 1 && (
         <div className='flex items-center justify-center'>
           <Pagination>
             <PaginationContent>
