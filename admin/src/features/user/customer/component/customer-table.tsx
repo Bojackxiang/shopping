@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import CustomerDetailDialog from './customer-dialog';
 
 interface CustomerTableProps {
   searchParams?: {
@@ -155,6 +156,11 @@ const CustomerTable = ({ searchParams }: CustomerTableProps) => {
                             @{customer.username}
                           </span>
                         )}
+                        {!customer.firstName && !customer.lastName && (
+                          <span className='text-muted-foreground text-xs font-bold'>
+                            Name is Empty
+                          </span>
+                        )}
                       </div>
                     </div>
                   </TableCell>
@@ -166,9 +172,7 @@ const CustomerTable = ({ searchParams }: CustomerTableProps) => {
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{formatDate(customer.createdAt)}</TableCell>
                   <TableCell className='text-right'>
-                    <Button variant='outline' size='sm'>
-                      View
-                    </Button>
+                    <CustomerDetailDialog customerId={customer.id} />
                   </TableCell>
                 </TableRow>
               ))

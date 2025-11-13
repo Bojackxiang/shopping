@@ -44,3 +44,20 @@ export const getAllCustomers = async ({
     throw handleError(error);
   }
 };
+
+/**
+ * Get customer by ID
+ * @param id 客户 ID
+ * @returns Customer 或 null
+ */
+export const getCustomerById = async (id: string) => {
+  try {
+    const customer = await db.customers.findUnique({
+      where: { id }
+    });
+
+    return customer;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
