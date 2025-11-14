@@ -17,10 +17,10 @@
     "format:check": "prettier -c -w .",
     "prepare": "husky",
     "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio",
-    "prisma:push": "prisma db push",
-    "prisma:pull": "prisma db pull"
+    "db::migrate:dev": "npx prisma migrate dev --name ",
+    "db::pull:dev": "npx prisma migrate dev",
+    "db::deploy:dev": "npx prisma migrate deploy",
+    "db::studio": "npx prisma studio"
   },
   "lint-staged": {
     "**/*.{js,jsx,tsx,ts,css,less,scss,sass}": [
