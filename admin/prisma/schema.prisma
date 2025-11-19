@@ -52,20 +52,20 @@ model carts {
 }
 
 model categories {
-  id          String       @id
-  name        String       @unique
-  slug        String       @unique
+  id          String               @id
+  name        String               @unique
+  slug        String               @unique
   description String?
   imageUrl    String?
-  isActive    Boolean      @default(true)
-  sortOrder   Int          @default(0)
+  isActive    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
   parentId    String?
-  parent      categories?  @relation("CategoryToParent", fields: [parentId], references: [id])
-  children    categories[] @relation("CategoryToParent")
-  path        String       @default("")
-  createdAt   DateTime     @default(now())
+  parent      categories?          @relation("CategoryToParent", fields: [parentId], references: [id])
+  children    categories[]         @relation("CategoryToParent")
+  path        String               @default("")
+  createdAt   DateTime             @default(now())
   updatedAt   DateTime
-  products    products[]
+  products    product_categories[]
 
   @@index([isActive])
   @@index([slug])
@@ -177,7 +177,6 @@ model products {
   slug               String               @unique
   description        String?              @db.Text
   thumbnail          String? // 产品封面图/缩略图,用于列表展示
-  categoryId         String?
   status             ProductStatus        @default(DRAFT) // 产品状态
   publishedAt        DateTime? // 发布时间
   isActive           Boolean              @default(true)
@@ -193,9 +192,8 @@ model products {
   wishlistCount      Int                  @default(0) // 收藏数
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  variants           product_variants[] // 产品变体
+  variants           product_variants[]
   product_images     product_images[]
-  categories         categories?          @relation(fields: [categoryId], references: [id])
   reviews            reviews[]
   wishlist_items     wishlist_items[]
   product_tags       product_tags[]
@@ -203,8 +201,8 @@ model products {
   promotion_products promotion_products[]
   related_from       related_products[]   @relation("ProductRelations")
   related_to         related_products[]   @relation("RelatedToProduct")
+  categories         product_categories[]
 
-  @@index([categoryId])
   @@index([status])
   @@index([isActive])
   @@index([isFeatured])
@@ -213,6 +211,22 @@ model products {
   @@index([salesCount]) // 按销量排序
   @@index([avgRating]) // 按评分排序
   @@index([viewCount]) // 按浏览量排序
+}
+
+model product_categories {
+  productId  String
+  categoryId String
+  isPrimary  Boolean  @default(false) // 是否为主分类
+  sortOrder  Int      @default(0) // 排序
+  createdAt  DateTime @default(now())
+
+  product  products   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+  @@index([isPrimary])
 }
 
 // 新增:产品变体表(SKU级别)

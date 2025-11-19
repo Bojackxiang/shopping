@@ -3,8 +3,7 @@
 import { db } from '@/lib/prisma';
 import { handleError } from '@/utils';
 import { randomUUID } from 'crypto';
-import { CreateCategoryInput, UpdateCategoryInput } from './category.types';
-import { sl } from 'zod/v4/locales';
+import { UpdateCategoryInput } from './category.types';
 
 function generateSlug(name: string): string {
   return name
@@ -153,6 +152,20 @@ export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
 
 export const deleteCategory = async (id: string) => {
   try {
+    // user are not able to delete parentId === null categories
+    const categoryToDelete = await db.categories.findUnique({
+      where: { id },
+      select: { parentId: true }
+    });
+
+    if (!categoryToDelete) {
+      throw new Error('Category not found');
+    }
+
+    if (categoryToDelete.parentId === null) {
+      throw new Error('Cannot delete root category');
+    }
+
     // verify if category has any children or products before deleting
     // verify product
     const productsCount = await db.products.count({
@@ -175,6 +188,7 @@ export const deleteCategory = async (id: string) => {
       );
     }
 
+    // soft delete the category first
     const category = await db.categories.update({
       where: { id },
       data: {
