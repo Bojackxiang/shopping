@@ -19,12 +19,14 @@ import ProductNotFound from './product-not-found';
 
 // Business Logic & Hooks
 import { useProductData } from '../hooks/use-product-data';
-import useUpdateProductData from '../hooks/use-update-product-data';
+import useUpdateProductData from '../hooks/use-update-product';
 import { productFormSchema, ProductFormData } from '../schemas/product-schema';
 import { ProductFormProvider } from '../context/product-form-context';
 import { ProductStatus } from '@prisma/client';
 import { getErrorMessage } from '../utils/product-error-handler';
 import { onToast, onToastError } from '@/lib/toast';
+import { delay } from '@/utils/delay';
+import { useRouter } from 'next/navigation';
 
 interface ProductEditorProps {
   productId: string;
@@ -32,7 +34,7 @@ interface ProductEditorProps {
 
 export default function ProductEditor(props: ProductEditorProps) {
   const { productId } = props;
-
+  const router = useRouter();
   // ====== Data Hooks ======
   const { data: product, error, isLoading } = useProductData(productId);
   const { updateProduct } = useUpdateProductData({ productId });
@@ -87,7 +89,13 @@ export default function ProductEditor(props: ProductEditorProps) {
   // 提交表单
   const onSubmit = async (data: ProductFormData) => {
     await updateProduct(data);
-    onToast('Product saved successfully!');
+    onToast(
+      'Product saved successfully! And we we are redirecting you back to the products list.'
+    );
+
+    delay(1500);
+
+    router.push('/dashboard/product');
   };
 
   // 表单错误处理
@@ -112,10 +120,11 @@ export default function ProductEditor(props: ProductEditorProps) {
     );
   }
 
-  // Error/Not found
-  if (error || !product) return <ProductNotFound productId={productId} />;
+  // Error/Not found and is not creating new
+  if ((error || !product) && productId.trim() !== '')
+    return <ProductNotFound productId={productId} />;
 
-  if (!productId) return <ProductNotFound />;
+  if (!productId && productId.trim() !== '') return <ProductNotFound />;
 
   const { isDirty, isSubmitting } = form.formState;
 

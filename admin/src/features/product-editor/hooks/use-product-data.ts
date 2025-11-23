@@ -5,7 +5,7 @@ import { getProductById } from '@/repositories/product/product.repository';
 
 export function useProductData(productId: string) {
   return useSWR(
-    productId ? ['product', productId] : null,
+    productId && productId.trim() !== '' ? ['product', productId] : null,
     () => getProductById(productId),
     {
       revalidateOnFocus: false,

@@ -12,10 +12,10 @@ const CategoryViewContent = () => {
   const {
     isLoading,
     searchTerm,
-    setSearchTerm,
+    selectedCategory,
     selectedCategoryId,
-    setSelectedCategoryId,
-    selectedCategory
+    setSearchTerm,
+    setSelectedCategoryId
   } = useCategoryContext();
 
   return (
@@ -26,9 +26,9 @@ const CategoryViewContent = () => {
           <CategoriesList
             searchTerm={searchTerm}
             selectedCategoryId={selectedCategoryId}
+            selectedCategory={selectedCategory}
             setSearchTerm={setSearchTerm}
             setSelectedCategoryId={setSelectedCategoryId}
-            selectedCategory={selectedCategory}
           />
         )}
       </div>

@@ -106,8 +106,11 @@ export const getAllProducts = async ({
   }
 };
 
-export const getProductById = async (id: string) => {
+export const getProductById = async (id: string | null) => {
   try {
+    if (id === null) {
+      return null;
+    }
     const product = await db.products.findUnique({
       where: { id },
       include: {

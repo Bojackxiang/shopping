@@ -4,7 +4,6 @@ import useSWRMutation from 'swr/mutation';
 import { updateProduct } from '@/repositories';
 import { UpdateProductInput } from '@/repositories/product/product.types';
 import { mutate } from 'swr';
-import { updateProductCategories } from '@/repositories/product-category/product-category-repo';
 
 interface UseUpdateProductDataProps {
   productId: string;
@@ -17,10 +16,6 @@ interface UpdateProductArgs {
 interface UseUpdateProductCategoryDataProps {
   productId: string;
   categories: Array<{ id: string; name: string }>;
-}
-
-interface UpdateProductCategoryArgs {
-  arg: UseUpdateProductCategoryDataProps;
 }
 
 const useUpdateProductData = ({ productId }: UseUpdateProductDataProps) => {

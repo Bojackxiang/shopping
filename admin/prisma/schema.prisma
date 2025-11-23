@@ -63,6 +63,7 @@ model categories {
   parent      categories?          @relation("CategoryToParent", fields: [parentId], references: [id])
   children    categories[]         @relation("CategoryToParent")
   path        String               @default("")
+  removable   Boolean              @default(true) // All category, Marketing category 等 不可删除
   createdAt   DateTime             @default(now())
   updatedAt   DateTime
   products    product_categories[]
@@ -317,7 +318,7 @@ model wishlist_items {
 // 新增:标签表
 model tags {
   id           String         @id @default(uuid())
-  name         String         @unique
+  name         String?        @unique
   slug         String         @unique
   description  String?
   color        String? // 标签颜色,用于前端展示(如: #3B82F6)

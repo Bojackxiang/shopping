@@ -138,7 +138,8 @@ export default function ProductImages({ onChange }: ProductImagesProps) {
     e.preventDefault();
   };
 
-  const handleButtonClick = () => {
+  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     fileInputRef.current?.click();
   };
 

@@ -27,8 +27,12 @@ export const useCategoryManager = () => {
   );
 
   const handleAddCategory = async (data: categoryCreateInputType) => {
-    await createCategory(data);
-    await swrData.mutate();
+    try {
+      await createCategory(data);
+      await swrData.mutate();
+    } catch (error: any) {
+      throw error;
+    }
   };
 
   const handleUpdateCategory = async (

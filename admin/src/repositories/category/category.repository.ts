@@ -154,11 +154,11 @@ export async function createCategory(data: {
 
     return { success: true, data: category };
   } catch (error: any) {
-    console.error('Create category error:', error);
-    return { success: false, error: error.message };
+    handleError(error);
   }
 }
 
+// TODO: 用户不可以 update marketing 相关类别
 export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
   try {
     const category = await db.categories.update({
@@ -175,6 +175,7 @@ export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
   }
 };
 
+// TODO: 用户不可以 delete marketing 相关类别
 export const deleteCategory = async (id: string) => {
   try {
     // user are not able to delete parentId === null categories

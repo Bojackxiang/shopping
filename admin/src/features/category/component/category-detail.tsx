@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2, Loader2 } from 'lucide-react';
+import { Trash2, Edit2, Loader2, Router } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useCategoryStore } from '../lib/store';
+
 import { onToast } from '@/lib/toast';
 import { useConfirmDialog } from '@/components/confirm-dialog-provider';
 import { useCategoryContext } from '../context/category-context';
-import { deleteCategory } from '@/repositories/category/category.repository';
 
 interface CategoryDetailProps {
   category: any;
@@ -21,8 +20,7 @@ export default function CategoryDetail({
 }: CategoryDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const { handleUpdateCategory, selectedCategory, handleDeleteCategory } =
-    useCategoryContext();
+  const { handleUpdateCategory, handleDeleteCategory } = useCategoryContext();
   const [formData, setFormData] = useState({
     name: category?.name || '',
     slug: category?.slug || '',

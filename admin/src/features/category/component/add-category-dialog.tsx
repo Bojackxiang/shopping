@@ -44,7 +44,6 @@ export default function AddCategoryDialog({
     setIsSubmitting(true);
 
     try {
-      // 等待整个流程完成：创建 + SWR 重新验证
       await handleAddCategory({
         ...formData,
         parentId: parentId ?? null
@@ -53,9 +52,8 @@ export default function AddCategoryDialog({
       onToast('Category added successfully');
       setFormData({ name: '', slug: '', description: '' });
       onOpenChange(false);
-    } catch (error) {
-      onToastError('Failed to add category');
-      console.error('Add category error:', error);
+    } catch (error: any) {
+      onToastError('Failed to add category', error.message);
     } finally {
       setIsSubmitting(false);
     }

@@ -21,7 +21,8 @@
     "db::pull:dev": "npx prisma migrate dev",
     "db::deploy:dev": "npx prisma migrate deploy",
     "db::studio": "npx prisma studio",
-    "db::seed": "tsx prisma/seed.ts"
+    "db::seed": "tsx prisma/seed.ts",
+    "db::init": "npx tsx ./prisma/db-init.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
