@@ -64,7 +64,7 @@ model categories {
   children      categories[]         @relation("CategoryToParent")
   allowChildren Boolean              @default(true) // 是否允许有子分类
   path          String               @default("")
-  isProtected   Boolean              @default(true) // All category, Marketing category 等 不可删除
+  isProtected   Boolean              @default(false) // All category, Marketing category 等 不可删除
   createdAt     DateTime             @default(now())
   updatedAt     DateTime
   products      product_categories[]

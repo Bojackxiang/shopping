@@ -14,7 +14,7 @@ const categories = [
   //   createdAt: new Date(),
   //   updatedAt: new Date(),
   //   parentId: null, // Top level
-  //   removable: false
+  //   isProtected: true,
   // },
   // {
   //   id: 'marketing-all',
@@ -25,7 +25,7 @@ const categories = [
   //   createdAt: new Date(),
   //   updatedAt: new Date(),
   //   parentId: null, // Top level
-  //   removable: false,
+  //   isProtected: true,
   //   allowChildren: false
   // },
   // {
@@ -37,7 +37,7 @@ const categories = [
   //   createdAt: new Date(),
   //   updatedAt: new Date(),
   //   parentId: 'marketing-all', // Top level
-  //   removable: false,
+  //   isProtected: true,
   //   allowChildren: false
   // },
   {
@@ -49,7 +49,7 @@ const categories = [
     createdAt: new Date(),
     updatedAt: new Date(),
     parentId: 'marketing-all', // Top level
-    removable: false,
+    isProtected: true,
     allowChildren: false
   }
 ];

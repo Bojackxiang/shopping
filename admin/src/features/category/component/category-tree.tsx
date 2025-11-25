@@ -101,6 +101,11 @@ export default function CategoryTree({
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         parentId={selectedParentId}
+        selectedCategoryName={
+          selectedId
+            ? categories.find((c) => c.id === selectedId)?.name
+            : undefined
+        }
       />
     </div>
   );

@@ -27,16 +27,14 @@ export default function CategoryDetail({
     description: category?.description || ''
   });
 
-  // 当 category 改变时，更新 formData
   useEffect(() => {
     setFormData({
       name: category?.name || '',
       slug: category?.slug || '',
       description: category?.description || ''
     });
-    // 当切换到新的 category 时，退出编辑模式
     setIsEditing(false);
-  }, [category?.id]); // 只在 category.id 改变时触发
+  }, [category?.id]);
 
   const handleSave = async () => {
     try {

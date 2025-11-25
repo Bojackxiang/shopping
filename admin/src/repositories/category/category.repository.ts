@@ -5,13 +5,17 @@ import { handleError } from '@/utils';
 import { randomUUID } from 'crypto';
 import { UpdateCategoryInput } from './category.types';
 
+// ========================================
+// Helper Functions
+// ========================================
+
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '') // 移除特殊字符
-    .replace(/[\s_-]+/g, '-') // 替换空格、下划线为连字符
-    .replace(/^-+|-+$/g, ''); // 移除首尾连字符
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 async function generatePath(
@@ -26,24 +30,114 @@ async function generatePath(
   });
 
   if (!parent) return slug;
-
   return parent.path ? `${parent.path}>${slug}` : parent.id;
 }
+
+async function validateCategoryNotProtected(
+  id: string,
+  operation: 'update' | 'delete'
+) {
+  const category = await db.categories.findUnique({
+    where: { id },
+    select: { id: true, isProtected: true, parentId: true }
+  });
+
+  if (!category) {
+    throw new Error('Category not found');
+  }
+
+  if (category.isProtected) {
+    throw new Error(`Cannot ${operation} a protected category`);
+  }
+
+  return category;
+}
+
+/**
+ * 检查分类名称是否已存在（排除当前分类）
+ */
+async function validateUniqueName(name: string, excludeId?: string) {
+  const existing = await db.categories.findUnique({
+    where: { name }
+  });
+
+  if (existing && existing.id !== excludeId) {
+    throw new Error(`Category name "${name}" already exists`);
+  }
+}
+
+/**
+ * 检查 slug 是否已存在（排除当前分类）
+ */
+async function validateUniqueSlug(slug: string, excludeId?: string) {
+  const existing = await db.categories.findUnique({
+    where: { slug }
+  });
+
+  if (existing && existing.id !== excludeId) {
+    throw new Error(`Slug "${slug}" already exists`);
+  }
+}
+
+/**
+ * 检查父分类是否允许子分类
+ */
+async function validateParentAllowsChildren(parentId: string | null) {
+  if (!parentId) return;
+
+  const parent = await db.categories.findUnique({
+    where: { id: parentId },
+    select: { allowChildren: true }
+  });
+
+  if (!parent) {
+    throw new Error('Parent category not found');
+  }
+
+  if (!parent.allowChildren) {
+    throw new Error('Parent category does not allow children');
+  }
+}
+
+async function validateNoAssociatedProducts(id: string) {
+  const productsCount = await db.product_categories.count({
+    where: { categoryId: id }
+  });
+
+  if (productsCount > 0) {
+    throw new Error(
+      'Cannot delete category with associated products. Please reassign or delete the products first.'
+    );
+  }
+}
+
+async function validateNoChildren(id: string) {
+  const childrenCount = await db.categories.count({
+    where: { parentId: id }
+  });
+
+  if (childrenCount > 0) {
+    throw new Error(
+      'Cannot delete category with subcategories. Please reassign or delete the subcategories first.'
+    );
+  }
+}
+
+// ========================================
+// Public API Functions
+// ========================================
 
 export const getAllCategories = async () => {
   try {
     const categories = await db.categories.findMany({
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { createdAt: 'asc' },
       include: {
         _count: {
-          select: {
-            products: true // 统计关联的产品数量
-          }
+          select: { products: true }
         }
       }
     });
 
-    // 将 _count.products 转换为 productCount
     return categories.map((category) => ({
       ...category,
       productCount: category._count.products
@@ -58,13 +152,9 @@ export const getCategoryById = async (id: string) => {
     const category = await db.categories.findUnique({
       where: { id },
       include: {
-        _count: {
-          select: {
-            products: true
-          }
-        },
-        children: true, // 包含子分类
-        parent: true // 包含父分类
+        _count: { select: { products: true } },
+        children: true,
+        parent: true
       }
     });
 
@@ -84,11 +174,7 @@ export const getCategoryBySlug = async (slug: string) => {
     const category = await db.categories.findUnique({
       where: { slug },
       include: {
-        _count: {
-          select: {
-            products: true
-          }
-        },
+        _count: { select: { products: true } },
         children: true,
         parent: true
       }
@@ -115,40 +201,13 @@ export async function createCategory(data: {
   sortOrder?: number;
 }) {
   try {
-    // check if the parentId and if the parentCategory has allowChildren = true
-    if (data.parentId) {
-      const parentCategory = await db.categories.findUnique({
-        where: { id: data.parentId }
-      });
-
-      if (!parentCategory) {
-        throw new Error('Parent category not found');
-      }
-
-      if (!parentCategory.allowChildren) {
-        throw new Error('Parent category does not allow children');
-      }
-    }
+    await validateParentAllowsChildren(data.parentId);
 
     const id = randomUUID();
-
     const slug = data.slug || generateSlug(data.name);
 
-    const existingSlug = await db.categories.findUnique({
-      where: { slug }
-    });
-
-    if (existingSlug) {
-      throw new Error(`Slug "${slug}" already exists`);
-    }
-
-    const existingName = await db.categories.findUnique({
-      where: { name: data.name }
-    });
-
-    if (existingName) {
-      throw new Error(`Category name "${data.name}" already exists`);
-    }
+    await validateUniqueSlug(slug);
+    await validateUniqueName(data.name);
 
     const path = await generatePath(data.parentId || null, slug);
 
@@ -169,50 +228,26 @@ export async function createCategory(data: {
 
     return { success: true, data: category };
   } catch (error: any) {
-    handleError(error);
+    throw handleError(error);
   }
 }
 
-// TODO: 用户不可以 update marketing 相关类别
 export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
   try {
-    console.log('udateCategory data:', data);
-    // if category is protected, do not allow update
-    const categoryToUpdate = await db.categories.findUnique({
-      where: { id }
-    });
+    // 验证分类存在且未被保护
+    const category = await validateCategoryNotProtected(id, 'update');
 
-    if (!categoryToUpdate) {
-      throw new Error('Category not found');
+    // 验证名称唯一性（如果要更新名称）
+    if (data.name) {
+      await validateUniqueName(data.name, id);
     }
 
-    if (categoryToUpdate.isProtected) {
-      throw new Error('Cannot update a protected category');
+    // 验证 slug 唯一性（如果要更新 slug）
+    if (data.slug) {
+      await validateUniqueSlug(data.slug, id);
     }
 
-    // if updating name, check for uniqueness
-    if (data.name && data.name !== categoryToUpdate.name) {
-      const existingName = await db.categories.findUnique({
-        where: { name: data.name }
-      });
-
-      if (existingName) {
-        throw new Error(`Category name "${data.name}" already exists`);
-      }
-    }
-
-    // if updating slug, check for uniqueness
-    if (data.slug && data.slug !== categoryToUpdate.slug) {
-      const existingSlug = await db.categories.findUnique({
-        where: { slug: data.slug }
-      });
-
-      if (existingSlug) {
-        throw new Error(`Slug "${data.slug}" already exists`);
-      }
-    }
-
-    const category = await db.categories.update({
+    const updated = await db.categories.update({
       where: { id },
       data: {
         ...data,
@@ -220,62 +255,29 @@ export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
       }
     });
 
-    return category;
+    return updated;
   } catch (error) {
     throw handleError(error);
   }
 };
 
-// TODO: 用户不可以 delete marketing 相关类别
 export const deleteCategory = async (id: string) => {
   try {
-    // user are not able to delete parentId === null categories
-    const categoryToDelete = await db.categories.findUnique({
-      where: { id },
-      select: { parentId: true, isProtected: true }
-    });
+    const category = await validateCategoryNotProtected(id, 'delete');
 
-    if (!categoryToDelete) {
-      throw new Error('Category not found');
-    }
-
-    if (categoryToDelete.parentId === null) {
+    if (category.parentId === null) {
       throw new Error('Cannot delete root category');
     }
 
-    if (categoryToDelete.isProtected) {
-      throw new Error('Cannot delete a protected category');
-    }
+    await validateNoAssociatedProducts(id);
 
-    const productsCount = await db.product_categories.count({
-      where: { categoryId: id }
-    });
+    await validateNoChildren(id);
 
-    if (productsCount > 0) {
-      throw new Error(
-        'Cannot delete category with associated products. Please reassign or delete the products first.'
-      );
-    }
-
-    const childCategoriesCount = await db.categories.count({
-      where: { parentId: id }
-    });
-
-    if (childCategoriesCount > 0) {
-      throw new Error(
-        'Cannot delete category with subcategories. Please reassign or delete the subcategories first.'
-      );
-    }
-
-    // soft delete the category first
-    const category = await db.categories.update({
+    await db.categories.update({
       where: { id },
-      data: {
-        isActive: false
-      }
+      data: { isActive: false }
     });
 
-    // delete the category by id
     await db.categories.delete({
       where: { id }
     });
@@ -286,7 +288,6 @@ export const deleteCategory = async (id: string) => {
   }
 };
 
-// 获取分类下的所有产品
 export const getCategoryProducts = async (
   categoryId: string,
   options?: {
@@ -304,7 +305,6 @@ export const getCategoryProducts = async (
 
     let categoryIds = [categoryId];
 
-    // 如果包含子分类，获取所有子分类ID
     if (includeSubcategories) {
       const subcategories = await db.categories.findMany({
         where: {
@@ -318,18 +318,14 @@ export const getCategoryProducts = async (
     const products = await db.products.findMany({
       where: {
         categories: {
-          some: {
-            categoryId: { in: categoryIds }
-          }
+          some: { categoryId: { in: categoryIds } }
         },
         status: 'ACTIVE',
         isActive: true
       },
       include: {
         categories: {
-          include: {
-            category: true
-          }
+          include: { category: true }
         },
         variants: {
           where: { isActive: true },
@@ -351,23 +347,18 @@ export const getCategoryProducts = async (
   }
 };
 
-// 获取分类树（包含产品数量）
 export const getCategoryTree = async () => {
   try {
     const categories = await db.categories.findMany({
       where: { isActive: true },
       include: {
         _count: {
-          select: {
-            products: true,
-            children: true
-          }
+          select: { products: true, children: true }
         }
       },
       orderBy: { sortOrder: 'asc' }
     });
 
-    // 构建树形结构
     const buildTree = (parentId: string | null): any[] => {
       return categories
         .filter((cat) => cat.parentId === parentId)
@@ -385,7 +376,6 @@ export const getCategoryTree = async () => {
   }
 };
 
-// 批量更新分类排序
 export const updateCategoriesOrder = async (
   updates: Array<{ id: string; sortOrder: number }>
 ) => {

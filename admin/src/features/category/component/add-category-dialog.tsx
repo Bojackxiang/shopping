@@ -19,12 +19,14 @@ interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   parentId?: string | null;
+  selectedCategoryName?: string;
 }
 
 export default function AddCategoryDialog({
   open,
   onOpenChange,
-  parentId
+  parentId,
+  selectedCategoryName
 }: AddCategoryDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -70,7 +72,12 @@ export default function AddCategoryDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>
+            {selectedCategoryName
+              ? `Add Subcategory under ${selectedCategoryName}`
+              : 'Add New Category'}
+          </DialogTitle>
+
           <DialogDescription>
             {parentId
               ? 'Create a subcategory'
