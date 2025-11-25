@@ -25,19 +25,21 @@ const categories = [
   //   createdAt: new Date(),
   //   updatedAt: new Date(),
   //   parentId: null, // Top level
-  //   removable: false
+  //   removable: false,
+  //   allowChildren: false
   // },
-  {
-    id: 'marketing-hot-buy',
-    name: 'Hot Buy',
-    slug: 'marketing-hot-buy',
-    description: 'Hot Buy marketing category',
-    imageUrl: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    parentId: 'marketing-all', // Top level
-    removable: false
-  },
+  // {
+  //   id: 'marketing-hot-buy',
+  //   name: 'Hot Buy',
+  //   slug: 'marketing-hot-buy',
+  //   description: 'Hot Buy marketing category',
+  //   imageUrl: '',
+  //   createdAt: new Date(),
+  //   updatedAt: new Date(),
+  //   parentId: 'marketing-all', // Top level
+  //   removable: false,
+  //   allowChildren: false
+  // },
   {
     id: 'marketing-recommend',
     name: 'Recommend',
@@ -47,7 +49,8 @@ const categories = [
     createdAt: new Date(),
     updatedAt: new Date(),
     parentId: 'marketing-all', // Top level
-    removable: false
+    removable: false,
+    allowChildren: false
   }
 ];
 

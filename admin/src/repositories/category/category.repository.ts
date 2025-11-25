@@ -115,6 +115,21 @@ export async function createCategory(data: {
   sortOrder?: number;
 }) {
   try {
+    // check if the parentId and if the parentCategory has allowChildren = true
+    if (data.parentId) {
+      const parentCategory = await db.categories.findUnique({
+        where: { id: data.parentId }
+      });
+
+      if (!parentCategory) {
+        throw new Error('Parent category not found');
+      }
+
+      if (!parentCategory.allowChildren) {
+        throw new Error('Parent category does not allow children');
+      }
+    }
+
     const id = randomUUID();
 
     const slug = data.slug || generateSlug(data.name);
@@ -161,6 +176,42 @@ export async function createCategory(data: {
 // TODO: 用户不可以 update marketing 相关类别
 export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
   try {
+    console.log('udateCategory data:', data);
+    // if category is protected, do not allow update
+    const categoryToUpdate = await db.categories.findUnique({
+      where: { id }
+    });
+
+    if (!categoryToUpdate) {
+      throw new Error('Category not found');
+    }
+
+    if (categoryToUpdate.isProtected) {
+      throw new Error('Cannot update a protected category');
+    }
+
+    // if updating name, check for uniqueness
+    if (data.name && data.name !== categoryToUpdate.name) {
+      const existingName = await db.categories.findUnique({
+        where: { name: data.name }
+      });
+
+      if (existingName) {
+        throw new Error(`Category name "${data.name}" already exists`);
+      }
+    }
+
+    // if updating slug, check for uniqueness
+    if (data.slug && data.slug !== categoryToUpdate.slug) {
+      const existingSlug = await db.categories.findUnique({
+        where: { slug: data.slug }
+      });
+
+      if (existingSlug) {
+        throw new Error(`Slug "${data.slug}" already exists`);
+      }
+    }
+
     const category = await db.categories.update({
       where: { id },
       data: {
@@ -181,7 +232,7 @@ export const deleteCategory = async (id: string) => {
     // user are not able to delete parentId === null categories
     const categoryToDelete = await db.categories.findUnique({
       where: { id },
-      select: { parentId: true }
+      select: { parentId: true, isProtected: true }
     });
 
     if (!categoryToDelete) {
@@ -192,8 +243,10 @@ export const deleteCategory = async (id: string) => {
       throw new Error('Cannot delete root category');
     }
 
-    // verify if category has any children or products before deleting
-    // verify product (通过 product_categories 中间表)
+    if (categoryToDelete.isProtected) {
+      throw new Error('Cannot delete a protected category');
+    }
+
     const productsCount = await db.product_categories.count({
       where: { categoryId: id }
     });

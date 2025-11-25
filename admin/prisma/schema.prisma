@@ -52,21 +52,22 @@ model carts {
 }
 
 model categories {
-  id          String               @id
-  name        String               @unique
-  slug        String               @unique
-  description String?
-  imageUrl    String?
-  isActive    Boolean              @default(true)
-  sortOrder   Int                  @default(0)
-  parentId    String?
-  parent      categories?          @relation("CategoryToParent", fields: [parentId], references: [id])
-  children    categories[]         @relation("CategoryToParent")
-  path        String               @default("")
-  removable   Boolean              @default(true) // All category, Marketing category 等 不可删除
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime
-  products    product_categories[]
+  id            String               @id
+  name          String               @unique
+  slug          String               @unique
+  description   String?
+  imageUrl      String?
+  isActive      Boolean              @default(true)
+  sortOrder     Int                  @default(0)
+  parentId      String?
+  parent        categories?          @relation("CategoryToParent", fields: [parentId], references: [id])
+  children      categories[]         @relation("CategoryToParent")
+  allowChildren Boolean              @default(true) // 是否允许有子分类
+  path          String               @default("")
+  isProtected   Boolean              @default(true) // All category, Marketing category 等 不可删除
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime
+  products      product_categories[]
 
   @@index([isActive])
   @@index([slug])

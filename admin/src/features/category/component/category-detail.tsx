@@ -5,7 +5,7 @@ import { Trash2, Edit2, Loader2, Router } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-import { onToast } from '@/lib/toast';
+import { onToast, onToastError } from '@/lib/toast';
 import { useConfirmDialog } from '@/components/confirm-dialog-provider';
 import { useCategoryContext } from '../context/category-context';
 
@@ -39,11 +39,18 @@ export default function CategoryDetail({
   }, [category?.id]); // 只在 category.id 改变时触发
 
   const handleSave = async () => {
-    setLoading(true);
-    await handleUpdateCategory(category.id, formData);
-    onToast('Category updated successfully');
-    setIsEditing(false);
-    setLoading(false);
+    try {
+      setLoading(true);
+      await handleUpdateCategory(category.id, formData);
+      onToast('Category updated successfully');
+      setIsEditing(false);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      onToastError(
+        error instanceof Error ? error.message : 'Error updating category'
+      );
+    }
   };
 
   const { confirm } = useConfirmDialog();
@@ -55,7 +62,11 @@ export default function CategoryDetail({
           await handleDeleteCategory(category.id);
           onToast('Category deleted successfully');
           onUpdate();
-        } catch (error) {}
+        } catch (error) {
+          onToastError(
+            error instanceof Error ? error.message : 'Error deleting category'
+          );
+        }
       },
       {
         title: 'Delete Category',

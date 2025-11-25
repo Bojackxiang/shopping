@@ -12,6 +12,7 @@ import {
   categoryCreateInputType,
   categoryType
 } from '../schema/category-schema';
+import { handleError } from '@/utils';
 
 export const useCategoryManager = () => {
   const swrData = useSWR(
@@ -39,13 +40,21 @@ export const useCategoryManager = () => {
     id: string,
     updatedFields: Partial<categoryCreateInputType>
   ) => {
-    await updateCategory(id, updatedFields);
-    await swrData.mutate();
+    try {
+      await updateCategory(id, updatedFields);
+      await swrData.mutate();
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {
-    await deleteCategory(id);
-    await swrData.mutate();
+    try {
+      await deleteCategory(id);
+      await swrData.mutate();
+    } catch (error) {
+      throw error;
+    }
   };
 
   return {
