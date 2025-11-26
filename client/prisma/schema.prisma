@@ -4,33 +4,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Customer {
-  id        String         @id @default(cuid())
-  clerkId   String         @unique
-  email     String         @unique
-  firstName String?
-  lastName  String?
-  username  String?
-  imageUrl  String?
-  phone     String?
-  role      String         @default("customer")
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  addresses Address[]
-  cart      Cart?
-  orders    Order[]
-  reviews   Review[]
-  wishlist  WishlistItem[]
-
-  @@index([clerkId])
-  @@index([email])
-  @@map("customers")
-}
-
-model Address {
-  id           String   @id @default(cuid())
+model addresses {
+  id           String    @id
   fullName     String
   phone        String
   addressLine1 String
@@ -38,123 +16,106 @@ model Address {
   city         String
   state        String?
   postalCode   String
-  country      String   @default("China")
-  isDefault    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  country      String    @default("China")
+  isDefault    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
   customerId   String
-  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  orders       Order[]
+  customers    customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders       orders[]
 
   @@index([customerId])
-  @@map("addresses")
 }
 
-model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?
-  imageUrl    String?
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-
-  @@index([slug])
-  @@index([isActive])
-  @@map("categories")
-}
-
-model Product {
-  id                                                           String               @id @default(cuid())
-  name                                                         String
-  slug                                                         String               @unique
-  description                                                  String?
-  categoryId                                                   String?
-  isActive                                                     Boolean              @default(true)
-  isFeatured                                                   Boolean              @default(false)
-  isNew                                                        Boolean              @default(false)
-  metaTitle                                                    String?
-  metaDescription                                              String?
-  createdAt                                                    DateTime             @default(now())
-  updatedAt                                                    DateTime             @updatedAt
-  avgRating                                                    Decimal?             @db.Decimal(3, 2)
-  publishedAt                                                  DateTime?
-  reviewCount                                                  Int                  @default(0)
-  salesCount                                                   Int                  @default(0)
-  status                                                       ProductStatus        @default(DRAFT)
-  thumbnail                                                    String?
-  viewCount                                                    Int                  @default(0)
-  wishlistCount                                                Int                  @default(0)
-  product_faqs                                                 product_faqs[]
-  images                                                       ProductImage[]
-  product_tags                                                 product_tags[]
-  product_variants                                             product_variants[]
-  category                                                     Category?            @relation(fields: [categoryId], references: [id])
-  promotion_products                                           promotion_products[]
-  related_products_related_products_productIdToproducts        related_products[]   @relation("related_products_productIdToproducts")
-  related_products_related_products_relatedProductIdToproducts related_products[]   @relation("related_products_relatedProductIdToproducts")
-  reviews                                                      Review[]
-  wishlistItems                                                WishlistItem[]
-
-  @@index([slug])
-  @@index([categoryId])
-  @@index([isActive])
-  @@index([isFeatured])
-  @@index([avgRating])
-  @@index([publishedAt])
-  @@index([salesCount])
-  @@index([status])
-  @@index([viewCount])
-  @@map("products")
-}
-
-model ProductImage {
-  id        String   @id @default(cuid())
-  productId String
-  url       String
-  altText   String?
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  isCover   Boolean  @default(false)
-  publicId  String?
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@map("product_images")
-}
-
-model Cart {
-  id         String     @id @default(cuid())
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  customerId String     @unique
-  items      CartItem[]
-  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@map("carts")
-}
-
-model CartItem {
-  id               String           @id @default(cuid())
-  cartId           String
-  quantity         Int              @default(1)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  variantId        String
-  cart             Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product_variants product_variants @relation(fields: [variantId], references: [id], onDelete: Cascade)
+model cart_items {
+  id        String           @id
+  cartId    String
+  variantId String
+  quantity  Int              @default(1)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+  carts     carts            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant   product_variants @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, variantId])
   @@index([cartId])
   @@index([variantId])
-  @@map("cart_items")
 }
 
-model Order {
-  id                   String        @id @default(cuid())
+model carts {
+  id         String       @id
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  customerId String       @unique
+  cart_items cart_items[]
+  customers  customers    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model categories {
+  id            String               @id
+  name          String               @unique
+  slug          String               @unique
+  description   String?
+  imageUrl      String?
+  isActive      Boolean              @default(true)
+  sortOrder     Int                  @default(0)
+  parentId      String?
+  parent        categories?          @relation("CategoryToParent", fields: [parentId], references: [id])
+  children      categories[]         @relation("CategoryToParent")
+  allowChildren Boolean              @default(true) // 是否允许有子分类
+  path          String               @default("")
+  isProtected   Boolean              @default(false) // All category, Marketing category 等 不可删除
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime
+  products      product_categories[]
+
+  @@index([isActive])
+  @@index([slug])
+}
+
+model customers {
+  id             String           @id
+  clerkId        String           @unique
+  email          String           @unique
+  firstName      String?
+  lastName       String?
+  username       String?
+  imageUrl       String?
+  phone          String?
+  role           String           @default("customer")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  addresses      addresses[]
+  carts          carts?
+  orders         orders[]
+  reviews        reviews[]
+  wishlist_items wishlist_items[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model order_items {
+  id           String           @id
+  orderId      String
+  variantId    String
+  productName  String // 冗余存储,防止产品被删除后订单信息丢失
+  productSlug  String
+  variantName  String? // 变体名称,如 "大号-红色"
+  productImage String?
+  quantity     Int
+  price        Decimal          @db.Decimal(10, 2) // 下单时的价格
+  total        Decimal          @db.Decimal(10, 2)
+  createdAt    DateTime         @default(now())
+  orders       orders           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant      product_variants @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
+model orders {
+  id                   String        @id
   orderNumber          String        @unique
   addressId            String?
   shippingFullName     String
@@ -182,258 +143,209 @@ model Order {
   cancelReason         String?
   refundedAt           DateTime?
   refundAmount         Decimal?      @db.Decimal(10, 2)
+  couponId             String? // 使用的优惠券
   createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  updatedAt            DateTime
   customerId           String
-  couponId             String?
-  items                OrderItem[]
-  address              Address?      @relation(fields: [addressId], references: [id])
+  order_items          order_items[]
+  addresses            addresses?    @relation(fields: [addressId], references: [id])
+  customers            customers     @relation(fields: [customerId], references: [id])
   coupons              coupons?      @relation(fields: [couponId], references: [id])
-  customer             Customer      @relation(fields: [customerId], references: [id])
 
+  @@index([createdAt])
   @@index([customerId])
   @@index([orderNumber])
   @@index([status])
-  @@index([createdAt])
   @@index([couponId])
-  @@map("orders")
 }
 
-model OrderItem {
-  id               String           @id @default(cuid())
-  orderId          String
-  productName      String
-  productSlug      String
-  productImage     String?
-  quantity         Int
-  price            Decimal          @db.Decimal(10, 2)
-  total            Decimal          @db.Decimal(10, 2)
-  createdAt        DateTime         @default(now())
-  variantId        String
-  variantName      String?
-  order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product_variants product_variants @relation(fields: [variantId], references: [id])
-
-  @@index([orderId])
-  @@index([variantId])
-  @@map("order_items")
-}
-
-model Review {
-  id                 String   @id @default(cuid())
-  productId          String
-  rating             Int
-  title              String?
-  comment            String?
-  isVerifiedPurchase Boolean  @default(false)
-  isApproved         Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  customerId         String
-  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([customerId])
-  @@index([productId])
-  @@index([rating])
-  @@index([isApproved])
-  @@map("reviews")
-}
-
-model WishlistItem {
-  id         String   @id @default(cuid())
-  productId  String
-  createdAt  DateTime @default(now())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([customerId, productId])
-  @@index([customerId])
-  @@index([productId])
-  @@map("wishlist_items")
-}
-
-model coupon_usages {
-  id         String   @id
-  couponId   String
-  customerId String
-  orderId    String?
-  usedAt     DateTime @default(now())
-  coupons    coupons  @relation(fields: [couponId], references: [id], onDelete: Cascade)
-
-  @@index([couponId])
-  @@index([customerId])
-  @@index([orderId])
-}
-
-model coupons {
-  id                    String          @id
-  code                  String          @unique
-  description           String?
-  type                  CouponType
-  value                 Decimal         @db.Decimal(10, 2)
-  minPurchase           Decimal?        @db.Decimal(10, 2)
-  maxDiscount           Decimal?        @db.Decimal(10, 2)
-  usageLimit            Int?
-  usageLimitPerCustomer Int?
-  usageCount            Int             @default(0)
-  startDate             DateTime
-  endDate               DateTime
-  isActive              Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime
-  coupon_usages         coupon_usages[]
-  orders                Order[]
-
-  @@index([code])
-  @@index([endDate])
-  @@index([isActive])
-  @@index([startDate])
-}
-
-model product_faqs {
+model product_images {
   id        String   @id
   productId String
-  question  String
-  answer    String
+  url       String
+  publicId  String? // Cloudinary public_id for deletion
+  isCover   Boolean  @default(false)
+  altText   String?
   sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime
-  products  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  products  products @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
+}
+
+model products {
+  id                 String               @id @default(uuid())
+  name               String
+  slug               String               @unique
+  description        String?              @db.Text
+  thumbnail          String? // 产品封面图/缩略图,用于列表展示
+  status             ProductStatus        @default(DRAFT) // 产品状态
+  publishedAt        DateTime? // 发布时间
+  isActive           Boolean              @default(true)
+  isFeatured         Boolean              @default(false)
+  isNew              Boolean              @default(false)
+  metaTitle          String?
+  metaDescription    String?
+  // 统计字段
+  viewCount          Int                  @default(0) // 浏览次数
+  salesCount         Int                  @default(0) // 销量
+  reviewCount        Int                  @default(0) // 评论数
+  avgRating          Decimal?             @db.Decimal(3, 2) // 平均评分 (0.00-5.00)
+  wishlistCount      Int                  @default(0) // 收藏数
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  variants           product_variants[]
+  product_images     product_images[]
+  reviews            reviews[]
+  wishlist_items     wishlist_items[]
+  product_tags       product_tags[]
+  product_faqs       product_faqs[]
+  promotion_products promotion_products[]
+  related_from       related_products[]   @relation("ProductRelations")
+  related_to         related_products[]   @relation("RelatedToProduct")
+  categories         product_categories[]
+
+  @@index([status])
   @@index([isActive])
-  @@index([productId])
+  @@index([isFeatured])
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([salesCount]) // 按销量排序
+  @@index([avgRating]) // 按评分排序
+  @@index([viewCount]) // 按浏览量排序
 }
 
-model product_tags {
-  id        String   @id
-  productId String
-  tagId     String
-  createdAt DateTime @default(now())
-  products  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tags      tags     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+model product_categories {
+  productId  String
+  categoryId String
+  isPrimary  Boolean  @default(false) // 是否为主分类
+  sortOrder  Int      @default(0) // 排序
+  createdAt  DateTime @default(now())
 
-  @@unique([productId, tagId])
+  product  products   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
   @@index([productId])
-  @@index([tagId])
+  @@index([categoryId])
+  @@index([isPrimary])
 }
 
+// 新增:产品变体表(SKU级别)
 model product_variants {
-  id                 String               @id
+  id                 String               @id @default(uuid())
   productId          String
   sku                String               @unique
   barcode            String?
-  name               String?
+  name               String? // 变体名称,如 "大号-红色"
   price              Decimal              @db.Decimal(10, 2)
   compareAtPrice     Decimal?             @db.Decimal(10, 2)
   cost               Decimal?             @db.Decimal(10, 2)
   inventory          Int                  @default(0)
   lowStockThreshold  Int                  @default(5)
   trackInventory     Boolean              @default(true)
-  size               String?
-  color              String?
-  material           String?
-  weight             Float?
-  attributes         Json?
-  isDefault          Boolean              @default(false)
+  // 变体属性
+  size               String? // S/M/L/XL 或 具体尺寸
+  color              String? // 颜色
+  material           String? // 材质(手链场景:和田玉、翡翠等)
+  weight             Float? // 重量
+  // 其他属性可用 JSON 存储
+  attributes         Json? // {bead_diameter: 8, length: 18, ...}
+  isDefault          Boolean              @default(false) // 是否为默认变体
   sortOrder          Int                  @default(0)
   isActive           Boolean              @default(true)
-  salesCount         Int                  @default(0)
+  // 统计字段
+  salesCount         Int                  @default(0) // 该变体销量
   createdAt          DateTime             @default(now())
-  updatedAt          DateTime
-  cart_items         CartItem[]
-  order_items        OrderItem[]
-  products           Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  promotion_products promotion_products[]
+  updatedAt          DateTime             @updatedAt
+  product            products             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart_items         cart_items[]
+  order_items        order_items[]
   variant_images     variant_images[]
+  promotion_products promotion_products[]
 
-  @@index([isActive])
   @@index([productId])
-  @@index([salesCount])
   @@index([sku])
+  @@index([isActive])
+  @@index([salesCount]) // 按销量排序
 }
 
-model promotion_products {
-  id               String            @id
-  promotionId      String
-  productId        String?
-  variantId        String?
-  createdAt        DateTime          @default(now())
-  products         Product?          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  promotions       promotions        @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  product_variants product_variants? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+// 新增:变体图片表(可选,如果不同变体有不同图片)
+model variant_images {
+  id        String           @id @default(uuid())
+  variantId String
+  url       String
+  altText   String?
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+  variant   product_variants @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  @@index([productId])
-  @@index([promotionId])
   @@index([variantId])
 }
 
-model promotions {
-  id                 String               @id
-  name               String
-  description        String?
-  type               PromotionType
-  value              Decimal              @db.Decimal(10, 2)
-  startDate          DateTime
-  endDate            DateTime
-  isActive           Boolean              @default(true)
-  minPurchase        Decimal?             @db.Decimal(10, 2)
-  maxDiscount        Decimal?             @db.Decimal(10, 2)
-  usageLimit         Int?
-  usageCount         Int                  @default(0)
-  createdAt          DateTime             @default(now())
+model reviews {
+  id                 String    @id
+  productId          String
+  rating             Int
+  title              String?
+  comment            String?
+  isVerifiedPurchase Boolean   @default(false)
+  isApproved         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
   updatedAt          DateTime
-  promotion_products promotion_products[]
+  customerId         String
+  customers          customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  products           products  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([endDate])
-  @@index([isActive])
-  @@index([startDate])
-}
-
-model related_products {
-  id                                                   String       @id
-  productId                                            String
-  relatedProductId                                     String
-  type                                                 RelationType @default(RELATED)
-  sortOrder                                            Int          @default(0)
-  createdAt                                            DateTime     @default(now())
-  products_related_products_productIdToproducts        Product      @relation("related_products_productIdToproducts", fields: [productId], references: [id], onDelete: Cascade)
-  products_related_products_relatedProductIdToproducts Product      @relation("related_products_relatedProductIdToproducts", fields: [relatedProductId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, relatedProductId])
+  @@index([customerId])
+  @@index([isApproved])
   @@index([productId])
-  @@index([type])
+  @@index([rating])
 }
 
+model wishlist_items {
+  id         String    @id
+  productId  String
+  createdAt  DateTime  @default(now())
+  customerId String
+  customers  customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  products   products  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@index([productId])
+}
+
+// 新增:标签表
 model tags {
-  id           String         @id
-  name         String         @unique
+  id           String         @id @default(uuid())
+  name         String?        @unique
   slug         String         @unique
   description  String?
-  color        String?
+  color        String? // 标签颜色,用于前端展示(如: #3B82F6)
   isActive     Boolean        @default(true)
-  createdBy    String?
+  createdBy    String? // 创建者ID
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime       @updatedAt
   product_tags product_tags[]
 
-  @@index([createdBy])
-  @@index([isActive])
   @@index([slug])
+  @@index([isActive])
+  @@index([createdBy])
 }
 
-model variant_images {
-  id               String           @id
-  variantId        String
-  url              String
-  altText          String?
-  sortOrder        Int              @default(0)
-  createdAt        DateTime         @default(now())
-  product_variants product_variants @relation(fields: [variantId], references: [id], onDelete: Cascade)
+// 新增:产品-标签关联表(多对多关系)
+model product_tags {
+  id        String   @id @default(uuid())
+  productId String
+  tagId     String
+  createdAt DateTime @default(now())
+  products  products @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tags      tags     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@index([variantId])
+  @@unique([productId, tagId]) // 防止重复关联
+  @@index([productId])
+  @@index([tagId])
 }
 
 enum OrderStatus {
@@ -452,27 +364,136 @@ enum PaymentStatus {
   REFUNDED
 }
 
-enum CouponType {
-  PERCENTAGE
-  FIXED_AMOUNT
-  FREE_SHIPPING
-}
-
 enum ProductStatus {
-  DRAFT
-  ACTIVE
-  ARCHIVED
+  DRAFT // 草稿
+  ACTIVE // 已上架
+  ARCHIVED // 已下架
 }
 
 enum PromotionType {
-  PERCENTAGE
-  FIXED_AMOUNT
-  BUY_X_GET_Y
-  FREE_SHIPPING
+  PERCENTAGE // 百分比折扣
+  FIXED_AMOUNT // 固定金额
+  BUY_X_GET_Y // 买X送Y
+  FREE_SHIPPING // 免运费
+}
+
+enum CouponType {
+  PERCENTAGE // 百分比折扣
+  FIXED_AMOUNT // 固定金额
+  FREE_SHIPPING // 免运费
 }
 
 enum RelationType {
-  RELATED
-  UPSELL
-  CROSS_SELL
+  RELATED // 相关产品
+  UPSELL // 升级推荐(更贵的替代品)
+  CROSS_SELL // 交叉销售(配件、搭配)
+}
+
+// ============ 促销系统 ============
+model promotions {
+  id                 String               @id @default(uuid())
+  name               String
+  description        String?              @db.Text
+  type               PromotionType
+  value              Decimal              @db.Decimal(10, 2) // 折扣值或金额
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean              @default(true)
+  minPurchase        Decimal?             @db.Decimal(10, 2) // 最低购买金额
+  maxDiscount        Decimal?             @db.Decimal(10, 2) // 最大折扣金额
+  usageLimit         Int? // 总使用次数限制
+  usageCount         Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  promotion_products promotion_products[]
+
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model promotion_products {
+  id          String            @id @default(uuid())
+  promotionId String
+  productId   String?
+  variantId   String?
+  createdAt   DateTime          @default(now())
+  promotion   promotions        @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product     products?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant     product_variants? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+// ============ 优惠券系统 ============
+model coupons {
+  id                    String          @id @default(uuid())
+  code                  String          @unique
+  description           String?         @db.Text
+  type                  CouponType
+  value                 Decimal         @db.Decimal(10, 2)
+  minPurchase           Decimal?        @db.Decimal(10, 2) // 最低消费
+  maxDiscount           Decimal?        @db.Decimal(10, 2) // 最大折扣
+  usageLimit            Int? // 总使用次数限制
+  usageLimitPerCustomer Int? // 每个用户使用次数限制
+  usageCount            Int             @default(0)
+  startDate             DateTime
+  endDate               DateTime
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  coupon_usages         coupon_usages[]
+  orders                orders[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model coupon_usages {
+  id         String   @id @default(uuid())
+  couponId   String
+  customerId String
+  orderId    String?
+  usedAt     DateTime @default(now())
+  coupon     coupons  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([customerId])
+  @@index([orderId])
+}
+
+// ============ 产品问答 ============
+model product_faqs {
+  id        String   @id @default(uuid())
+  productId String
+  question  String   @db.Text
+  answer    String   @db.Text
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   products @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([isActive])
+}
+
+// ============ 关联产品 ============
+model related_products {
+  id               String       @id @default(uuid())
+  productId        String
+  relatedProductId String
+  type             RelationType @default(RELATED)
+  sortOrder        Int          @default(0)
+  createdAt        DateTime     @default(now())
+  product          products     @relation("ProductRelations", fields: [productId], references: [id], onDelete: Cascade)
+  relatedProduct   products     @relation("RelatedToProduct", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, relatedProductId])
+  @@index([productId])
+  @@index([type])
 }
