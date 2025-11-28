@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { useState, useMemo } from "react";
 
 import { Pagination } from "@/feature/product-list/components/pagination";
 import { useProductListWithCategory } from "../hooks/use-product-list";
-import { ProductGridSkeleton } from "../components/product-grid-skeleton";
-import ProductGridDisplay from "../components/product-grid-display";
-import ProductListDisplay from "../components/product-list-display";
+import { usePaginationData } from "../hooks/use-pagination-data";
 import ResultsHeader from "../components/results-header";
 import PageHeader from "../components/page-header";
+import ProductDisplay from "../components/product-display";
 
 // Sample product data using the available images
 const products = [
@@ -118,17 +115,20 @@ const sortOptions = [
 ];
 
 export function ProductListView() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pageFromQuery = parseInt(searchParams.get("page") || "1", 10);
-  const categoryFromQuery = searchParams.get("category") || "all";
+  const {
+    pageFromQuery,
+    lastValidTotalPagesRef,
+    handlePageChange,
+    updateTotalPages,
+    getPaginationState,
+  } = usePaginationData();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const categoryFromQuery = "all";
+
   const [selectedCategory, setSelectedCategory] = useState(categoryFromQuery);
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 200]);
   const [showSaleOnly, setShowSaleOnly] = useState(false);
 
   const pageList = useProductListWithCategory({
@@ -146,42 +146,22 @@ export function ProductListView() {
   const paginationData = pageList.products.data || {};
   const isLoading = !pageList.products.data;
 
-  const lastValidTotalPagesRef = useRef<number>(1);
+  // Update total pages when pagination data changes
+  if (paginationData.totalPages) {
+    updateTotalPages(paginationData.totalPages);
+  }
 
-  useEffect(() => {
-    if (paginationData.totalPages && paginationData.totalPages > 0) {
-      lastValidTotalPagesRef.current = paginationData.totalPages;
-    }
-  }, [paginationData.totalPages]);
-
-  const totalPages =
-    paginationData.totalPages || lastValidTotalPagesRef.current;
-
-  const currentPage = pageFromQuery;
-  const hasNextPage = currentPage < totalPages;
-  const hasPreviousPage = currentPage > 1;
-
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", newPage.toString());
-      router.push(`?${params.toString()}`);
-    },
-    [searchParams, router]
-  );
+  const paginationState = getPaginationState(paginationData.totalPages);
+  const { currentPage, totalPages, hasNextPage, hasPreviousPage } =
+    paginationState;
 
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategory === "all" || product.category === selectedCategory;
-      const price = parseFloat(product.price.replace("$", ""));
-      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
       const matchesSale = !showSaleOnly || product.sale;
 
-      return matchesSearch && matchesCategory && matchesPrice && matchesSale;
+      return matchesCategory && matchesSale;
     });
 
     // Sort products
@@ -206,7 +186,7 @@ export function ProductListView() {
           (a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
         );
     }
-  }, [searchQuery, selectedCategory, sortBy, priceRange, showSaleOnly]);
+  }, [selectedCategory, sortBy, showSaleOnly]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -277,28 +257,12 @@ export function ProductListView() {
               sortOptions={sortOptions}
             />
 
-            {/* Products Grid */}
-            {isLoading ? (
-              <ProductGridSkeleton viewMode={viewMode} />
-            ) : filteredAndSortedProducts.length > 0 ? (
-              viewMode === "grid" ? (
-                <ProductGridDisplay products={filteredAndSortedProducts} />
-              ) : (
-                <ProductListDisplay products={filteredAndSortedProducts} />
-              )
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 bg-secondary rounded-full flex items-center justify-center">
-                  <Search className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-light text-foreground mb-2">
-                  No products found
-                </h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search or filter criteria
-                </p>
-              </div>
-            )}
+            {/* Products Display */}
+            <ProductDisplay
+              isLoading={isLoading}
+              products={filteredAndSortedProducts}
+              viewMode={viewMode}
+            />
 
             {/* Pagination */}
             {filteredAndSortedProducts.length > 0 && (
