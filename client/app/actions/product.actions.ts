@@ -145,3 +145,20 @@ export async function getAllProductsAction(input: {
     };
   }
 }
+
+export const getProductByIdAction = async (productId: string) => {
+  try {
+    const product = await ProductRepo.getProductById(productId);
+    return {
+      success: true,
+      data: serializeProducts(product),
+    };
+  } catch (error) {
+    console.error("Error fetching product by ID:", error);
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};

@@ -1,6 +1,5 @@
-import React from "react";
 import Link from "next/link";
-import { Search, Home, Package, ArrowLeft } from "lucide-react";
+import { Search, Home, Package } from "lucide-react";
 
 const ProductNotFound = () => {
   return (

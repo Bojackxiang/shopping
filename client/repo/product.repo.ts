@@ -1,5 +1,6 @@
 import { db } from "@/lib/prisma";
 import page from "../app/contact/page";
+import { product_variants } from "@prisma/client";
 
 const HOT_CATEGORY_ID = "marketing-hot-buy" as const;
 const RECOMMEND_ID = "marketing-recommend" as const;
@@ -190,5 +191,22 @@ export class ProductRepo {
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
     };
+  }
+
+  public static async getProductById(productId: string) {
+    const product = await db.products.findUnique({
+      where: { id: productId },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        variants: true,
+        product_images: true,
+      },
+    });
+
+    return product;
   }
 }
