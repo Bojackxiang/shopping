@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
 import { ProductWithVariants } from "@/types/prisma";
+import { linkToProductDetail } from "@/utils";
 
 interface ProductListDisplayProps {
   products: ProductWithVariants[];
@@ -19,7 +20,7 @@ const ProductListDisplay = ({ products }: ProductListDisplayProps) => {
         return (
           <Link
             key={product.id}
-            href={`/products/${product.id}`}
+            href={linkToProductDetail(product.id)}
             className="flex items-center space-x-4 p-4 bg-card border border-border rounded-xl hover:shadow-md transition-shadow"
           >
             <div className="relative w-20 h-20 overflow-hidden rounded-lg bg-secondary shrink-0">

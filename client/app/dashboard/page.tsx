@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { linkToProductDetail } from "@/utils";
 
 // Dashboard navigation items
 const navigationItems = [
@@ -306,7 +307,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <Link
-                  href={`/products/${order.id}`}
+                  href={linkToProductDetail(order.id)}
                   className="text-accent hover:text-accent/80 transition-colors"
                 >
                   View Details <ChevronRight className="w-4 h-4 inline" />
@@ -538,7 +539,7 @@ export default function DashboardPage() {
               <h3 className="font-light text-foreground mb-2">{item.name}</h3>
               <div className="flex items-center justify-between">
                 <span className="font-medium text-accent">{item.price}</span>
-                <Link href={`/products/${item.id}`}>
+                <Link href={linkToProductDetail(item.id)}>
                   <Button size="sm" disabled={!item.inStock}>
                     {item.inStock ? "View Details" : "Out of Stock"}
                   </Button>

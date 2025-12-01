@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
 import { products } from "@prisma/client";
 import { ProductWithVariants } from "@/types/prisma";
+import { linkToProductDetail } from "@/utils";
 
 interface ProductGridDisplayProps {
   products: ProductWithVariants[];
@@ -21,7 +22,7 @@ const ProductGridDisplay = ({ products }: ProductGridDisplayProps) => {
         return (
           <Link
             key={product.id}
-            href={`/products/${product.id}`}
+            href={linkToProductDetail(product.id)}
             className="group cursor-pointer"
           >
             <div className="relative mb-4 overflow-hidden rounded-xl bg-secondary aspect-square">

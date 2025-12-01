@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { linkToProductDetail } from "@/utils/link-to-product-detail";
 
 // Sample cart data
 interface CartItem {
@@ -236,7 +237,7 @@ export default function ShoppingCartPage() {
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/products/${item.id}`}
+                          href={linkToProductDetail(item.id)}
                           className="font-light text-foreground hover:text-accent transition-colors block truncate"
                         >
                           {item.name}

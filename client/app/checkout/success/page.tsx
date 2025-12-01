@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { linkToProductDetail } from "@/utils";
 
 // Sample order data
 interface OrderItem {
@@ -621,7 +622,7 @@ export default function CheckoutSuccessPage() {
             ].map((product) => (
               <Link
                 key={product.id}
-                href={`/products/${product.id}`}
+                href={linkToProductDetail(product.id)}
                 className="group"
               >
                 <div className="relative mb-4 overflow-hidden rounded-xl bg-secondary aspect-square">
