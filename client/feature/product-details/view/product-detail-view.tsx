@@ -23,6 +23,8 @@ import { product_variants } from "@prisma/client";
 import { handleNullOrUndefinedValue } from "../../../utils/handle-null-value";
 import { handleDecimal, handleEmptyArray } from "@/utils";
 import useCart, { AddToCartInput } from "../hooks/use-cart";
+import useSWR from "swr";
+import { getCartItemsByVariantAction } from "@/app/actions/cart.action";
 
 interface Product {
   id: number;
@@ -113,6 +115,30 @@ const ProductDetailView = ({ productId, reviews }: ProductDetailViewProps) => {
       setSelectedVariant(defaultVariant);
     }
   }, [variants]);
+
+  // =================================
+  // fetch data
+  // =================================
+  useSWR(
+    selectedVariantId ? `cart-${selectedVariantId}` : null,
+    async () => {
+      if (!selectedVariantId) return null;
+
+      return await getCartItemsByVariantAction({
+        variantId: selectedVariantId,
+      });
+    },
+    {
+      onSuccess: (data) => {
+        const quantity = data?.cartItems?.quantity;
+        if (quantity) {
+          setQuantity(quantity);
+        } else {
+          setQuantity(1);
+        }
+      },
+    }
+  );
 
   // =================================
   // component management

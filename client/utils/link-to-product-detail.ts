@@ -1,3 +1,3 @@
 export const linkToProductDetail = (productId: string | number): string => {
-  return `/product/${productId}`;
+  return `/products/${productId}`;
 };

@@ -112,6 +112,37 @@ export class CartRepo {
     return cart;
   }
 
+  static async getCustomerCartItemsByVariant({
+    customerClerkId,
+    variantId,
+  }: {
+    customerClerkId: string;
+    variantId: string;
+  }) {
+    if (!customerClerkId) throw new Error("customerClerkId is required");
+
+    const customer = await db.customers.findUnique({
+      where: { clerkId: customerClerkId },
+    });
+
+    if (!customer) {
+      throw new Error(`Customer with clerkId ${customerClerkId} not found`);
+    }
+    const customerId = customer.id;
+
+    const cart = await db.carts.findUnique({
+      where: { customerId },
+    });
+
+    if (!cart) {
+      return null;
+    }
+
+    return await db.cart_items.findFirst({
+      where: { cartId: cart.id, variantId },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
   // static async mergeLocalCartToCustomerCart({
   //   customerId,
   //   localItems,

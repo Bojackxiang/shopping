@@ -38,3 +38,29 @@ export const updateCartInfoAction = async (
     throw new Error(`Failed to update cart information`);
   }
 };
+
+export interface GetCartItemsByVariantInput {
+  variantId: string;
+}
+
+export const getCartItemsByVariantAction = async (
+  input: GetCartItemsByVariantInput
+) => {
+  try {
+    const user = await currentUser();
+
+    if (!user) {
+      return { error: "User not logged in" };
+    }
+
+    const cartItems = await CartRepo.getCustomerCartItemsByVariant({
+      customerClerkId: user.id,
+      variantId: input.variantId,
+    });
+
+    return { cartItems };
+  } catch (error) {
+    console.log(`Failed to fetch cart items: ${(error as Error).message}`);
+    throw new Error(`Failed to fetch cart items`);
+  }
+};
