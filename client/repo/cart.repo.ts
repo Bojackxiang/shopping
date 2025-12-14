@@ -1,3 +1,5 @@
+import { CartError } from "@/custom-error/CartError";
+import { UserNotFoundError } from "@/custom-error/UserNotFound";
 import { db } from "@/lib/prisma";
 
 export interface CustomerAddingCartInput {
@@ -6,6 +8,7 @@ export interface CustomerAddingCartInput {
   quantity?: number;
 }
 export class CartRepo {
+  // 用户添加商品到购物车
   static async customerAddingCart({
     customerClerkId,
     variantId,
@@ -77,6 +80,75 @@ export class CartRepo {
     });
   }
 
+  // 用户更新购物车商品数量
+  static async customerUpdateCart({
+    customerClerkId,
+    variantId,
+    quantity = 1,
+  }: {
+    customerClerkId: string;
+    variantId: string;
+    quantity?: number;
+  }) {
+    if (!customerClerkId) throw new Error("customerClerkId is required");
+    if (!variantId) throw new Error("variantId is required");
+    if (quantity < 0) throw new Error("quantity must be >= 0");
+
+    return await db.$transaction(async (tx) => {
+      const customer = await tx.customers.findUnique({
+        where: { clerkId: customerClerkId },
+      });
+      if (!customer) {
+        throw new UserNotFoundError("Customer With ClerkId Not Found");
+      }
+
+      const customerId = customer.id;
+
+      let cart = await tx.carts.findUnique({
+        where: { customerId },
+      });
+      if (!cart) {
+        cart = await tx.carts.create({
+          data: { customerId },
+        });
+      }
+
+      const existing = await tx.cart_items.findUnique({
+        where: {
+          cartId_variantId: {
+            cartId: cart.id,
+            variantId,
+          },
+        },
+      });
+
+      // ----------------------------
+      // 处理 quantity = 0 的业务规则
+      // ----------------------------
+      if (quantity === 0) {
+        throw new CartError("Quantity in cart cannot be zero");
+      }
+
+      // ----------------------------
+      // quantity >= 1
+      // ----------------------------
+      if (existing) {
+        if (existing.quantity !== quantity) {
+          // update only when different
+          await tx.cart_items.update({
+            where: { id: existing.id },
+            data: { quantity },
+          });
+        }
+      }
+
+      return tx.cart_items.findMany({
+        where: { cartId: cart.id },
+        orderBy: { updatedAt: "desc" },
+      });
+    });
+  }
+
   static async touristAddingCart({
     localCart,
     variantId,
@@ -110,38 +182,6 @@ export class CartRepo {
     }
 
     return cart;
-  }
-
-  static async getCustomerCartItemsByVariant({
-    customerClerkId,
-    variantId,
-  }: {
-    customerClerkId: string;
-    variantId: string;
-  }) {
-    if (!customerClerkId) throw new Error("customerClerkId is required");
-
-    const customer = await db.customers.findUnique({
-      where: { clerkId: customerClerkId },
-    });
-
-    if (!customer) {
-      throw new Error(`Customer with clerkId ${customerClerkId} not found`);
-    }
-    const customerId = customer.id;
-
-    const cart = await db.carts.findUnique({
-      where: { customerId },
-    });
-
-    if (!cart) {
-      return null;
-    }
-
-    return await db.cart_items.findFirst({
-      where: { cartId: cart.id, variantId },
-      orderBy: { updatedAt: "desc" },
-    });
   }
 
   // host/cart 页面获取购物车及其商品详情
@@ -218,6 +258,58 @@ export class CartRepo {
     return await db.cart_items.findFirst({
       where: { cartId: cart.id, variantId },
       orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  // 用户更新购物车商品数量
+  static async customerRemoveVariant({
+    customerClerkId,
+    variantId,
+  }: {
+    customerClerkId: string;
+    variantId: string;
+  }) {
+    if (!customerClerkId) throw new Error("customerClerkId is required");
+    if (!variantId) throw new Error("variantId is required");
+
+    return await db.$transaction(async (tx) => {
+      const customer = await tx.customers.findUnique({
+        where: { clerkId: customerClerkId },
+      });
+      if (!customer) {
+        throw new UserNotFoundError("Customer With ClerkId Not Found");
+      }
+
+      const customerId = customer.id;
+
+      let cart = await tx.carts.findUnique({
+        where: { customerId },
+      });
+      if (!cart) {
+        cart = await tx.carts.create({
+          data: { customerId },
+        });
+      }
+
+      const existing = await tx.cart_items.findUnique({
+        where: {
+          cartId_variantId: {
+            cartId: cart.id,
+            variantId,
+          },
+        },
+      });
+
+      if (existing) {
+        await tx.cart_items.delete({
+          where: { id: existing.id },
+        });
+      }
+
+      return tx.cart_items.findMany({
+        where: { cartId: cart.id },
+        orderBy: { updatedAt: "desc" },
+      });
     });
   }
 }

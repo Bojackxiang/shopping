@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState } from "react";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +9,8 @@ import useCartData from "../hook/use-cart-data";
 import CartList from "../component/cart-list";
 import PriceCalculator from "../component/price-calculator";
 import CartLoading from "../component/cart-loading";
+import useUpdateCart from "../hook/use-update-cart.";
+import useRemoveItemFromCart from "../hook/use-remove-item-from-cart";
 
 // Sample cart data
 interface CartItem {
@@ -19,45 +22,24 @@ interface CartItem {
   quantity: number;
   size: string;
   inStock: boolean;
+  variantId: string;
 }
-
-const initialCartItems: CartItem[] = [
-  {
-    id: "1",
-    name: "Classic White Pearl Beaded Bracelet",
-    price: 89.99,
-    originalPrice: 120.0,
-    image: "/classic-white-pearl-beaded-bracelet.jpg",
-    quantity: 2,
-    size: "One Size",
-    inStock: true,
-  },
-  {
-    id: "2",
-    name: "Amethyst Crystal Beaded Bracelet",
-    price: 75.99,
-    image: "/amethyst-crystal-beaded-bracelet.jpg",
-    quantity: 1,
-    size: "One Size",
-    inStock: true,
-  },
-  {
-    id: "3",
-    name: "Golden Pearl Luxury Bracelet",
-    price: 149.99,
-    image: "/golden-pearl-beaded-bracelet-luxury.jpg",
-    quantity: 1,
-    size: "One Size",
-    inStock: false,
-  },
-];
 
 export default function CartView() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
 
-  const { cart, error, isLoading } = useCartData();
-  console.log("cart: ", JSON.stringify(cart));
+  const { cart, error, isLoading, mutate } = useCartData();
+  const {
+    updateCart,
+    isLoading: updateCartLoading,
+    error: updateCartError,
+  } = useUpdateCart();
+  const {
+    removeItem,
+    isLoading: removeItemLoading,
+    error: removeItemError,
+  } = useRemoveItemFromCart();
 
   // Map API data to CartItem format
   const cartItems: CartItem[] =
@@ -72,25 +54,40 @@ export default function CartView() {
       quantity: item.quantity || 1,
       size: item.variant?.name || "One Size",
       inStock: (item.variant?.inventory || 0) > 0,
+      variantId: item.variantId,
     })) || [];
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeItem(id);
-      return;
+  const updateQuantity = async (id: string, newQuantity: number) => {
+    try {
+      await updateCart({
+        quantity: newQuantity,
+        variantId: id,
+      });
+      await mutate();
+    } catch (error) {
+      toast.error("Failed to add to cart", {
+        description: "Please try again later",
+        duration: 3000,
+      });
     }
-    // TODO: Call API to update quantity
-    console.log(`Update quantity for item ${id} to ${newQuantity}`);
   };
 
-  const removeItem = (id: string) => {
-    // TODO: Call API to remove item
-    console.log(`Remove item ${id}`);
+  const removeItemHandler = (variantId: string) => {
+    try {
+      console.log(variantId);
+      removeItem({ variantId });
+      mutate();
+    } catch (error) {
+      toast.error("Failed to add to cart", {
+        description: "Please try again later",
+        duration: 3000,
+      });
+    }
   };
 
   const moveToWishlist = (id: string) => {
     // TODO: Call API to move to wishlist
-    removeItem(id);
+    // removeItem(id);
   };
 
   const applyPromoCode = () => {
@@ -112,7 +109,7 @@ export default function CartView() {
   const outOfStockItems = cartItems.filter((item) => !item.inStock);
   const availableItems = cartItems.filter((item) => item.inStock);
 
-  if (isLoading) {
+  if (isLoading || removeItemLoading) {
     return <CartLoading />;
   }
 
@@ -165,7 +162,7 @@ export default function CartView() {
             <CartList
               cartItems={cartItems}
               onUpdateQuantity={updateQuantity}
-              onRemoveItem={removeItem}
+              onRemoveItem={removeItemHandler}
               onMoveToWishlist={moveToWishlist}
             />
 

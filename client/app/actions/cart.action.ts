@@ -1,5 +1,6 @@
 "use server";
 
+import { CartError } from "@/custom-error/CartError";
 import { CartRepo } from "@/repo";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -99,5 +100,78 @@ export const fetchCartItemCountByVariantAction = async (
   } catch (error) {
     console.log(`Failed to fetch cart item: ${(error as Error).message}`);
     throw new Error(`Failed to fetch cart item`);
+  }
+};
+
+/* Update cart item quantity */
+export interface UpdateCartQuantityInput {
+  variantId: string;
+  quantity: number;
+}
+
+export const updateCartQuantityAction = async (
+  input: UpdateCartQuantityInput
+) => {
+  try {
+    const user = await currentUser();
+
+    if (!user) {
+      return { error: "User not logged in" };
+    }
+
+    const updatedCart = await CartRepo.customerUpdateCart({
+      customerClerkId: user.id,
+      variantId: input.variantId,
+      quantity: input.quantity,
+    });
+
+    // Process cart items to convert Decimal to string
+    const processedCart = updatedCart.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    }));
+
+    return { cart: processedCart, error: null };
+  } catch (error) {
+    return {
+      cart: null,
+      error: (error as Error).message || "Failed to update cart quantity",
+    };
+  }
+};
+
+export const deleteCartAction = async ({
+  variantId,
+}: {
+  variantId: string;
+}) => {
+  try {
+    const user = await currentUser();
+
+    if (!user) {
+      return { error: "User not logged in", cart: null };
+    }
+
+    const clerkId = user.id;
+
+    const updatedCart = await CartRepo.customerRemoveVariant({
+      customerClerkId: clerkId,
+      variantId,
+    });
+
+    // Process cart items to convert Decimal to string
+    const processedCart = updatedCart.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    }));
+
+    return { cart: processedCart, error: null };
+  } catch (error) {
+    return {
+      cart: null,
+      error: (error as Error).message || "Failed to delete cart item",
+    };
   }
 };

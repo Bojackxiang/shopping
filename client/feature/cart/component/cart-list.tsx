@@ -13,6 +13,7 @@ interface CartItem {
   quantity: number;
   size: string;
   inStock: boolean;
+  variantId: string;
 }
 
 interface CartListProps {
@@ -77,7 +78,7 @@ export default function CartList({
                     <Heart className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => onRemoveItem(item.id)}
+                    onClick={() => onRemoveItem(item.variantId)}
                     className="p-2 hover:bg-secondary rounded-lg transition-colors"
                     title="Remove item"
                   >
@@ -140,7 +141,7 @@ export default function CartList({
                   <div className="flex items-center border border-input rounded-lg">
                     <button
                       onClick={() =>
-                        onUpdateQuantity(item.id, item.quantity - 1)
+                        onUpdateQuantity(item.variantId, item.quantity - 1)
                       }
                       className="p-2 hover:bg-secondary transition-colors"
                       disabled={item.quantity <= 1}
@@ -152,7 +153,7 @@ export default function CartList({
                     </span>
                     <button
                       onClick={() =>
-                        onUpdateQuantity(item.id, item.quantity + 1)
+                        onUpdateQuantity(item.variantId, item.quantity + 1)
                       }
                       className="p-2 hover:bg-secondary transition-colors"
                     >
@@ -170,7 +171,7 @@ export default function CartList({
                       <Heart className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => onRemoveItem(item.id)}
+                      onClick={() => onRemoveItem(item.variantId)}
                       className="p-2 hover:bg-secondary rounded-lg transition-colors text-destructive"
                       title="Remove item"
                     >

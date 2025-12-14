@@ -11,8 +11,8 @@ interface CartDataResponse {
 }
 
 const useCartData = () => {
-  const { data, error, isLoading } = useSWR<CartDataResponse>(
-    "cart-data",
+  const { data, error, isLoading, mutate } = useSWR<CartDataResponse>(
+    "/api/cart/cart-data",
     async () => {
       return await fetchCartItemsByCustomerClerkIdAction();
     }
@@ -22,6 +22,7 @@ const useCartData = () => {
     cart: data?.cartItems,
     error: data?.error || error,
     isLoading,
+    mutate,
   };
 };
 

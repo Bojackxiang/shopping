@@ -2,7 +2,6 @@
 
 import { updateCartInfoAction } from "@/app/actions";
 import { toast } from "sonner";
-import useSWR from "swr";
 
 export interface AddToCartInput {
   productName?: string;
