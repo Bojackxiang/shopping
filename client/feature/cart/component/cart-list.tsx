@@ -71,13 +71,6 @@ export default function CartList({
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => onMoveToWishlist(item.id)}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                    title="Move to wishlist"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </button>
-                  <button
                     onClick={() => onRemoveItem(item.variantId)}
                     className="p-2 hover:bg-secondary rounded-lg transition-colors"
                     title="Remove item"
@@ -163,13 +156,6 @@ export default function CartList({
 
                   {/* Actions */}
                   <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => onMoveToWishlist(item.id)}
-                      className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                      title="Move to wishlist"
-                    >
-                      <Heart className="w-4 h-4" />
-                    </button>
                     <button
                       onClick={() => onRemoveItem(item.variantId)}
                       className="p-2 hover:bg-secondary rounded-lg transition-colors text-destructive"
