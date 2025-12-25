@@ -9,7 +9,11 @@ export const db =
     log:
       process.env.NODE_ENV === 'development'
         ? ['error', 'warn'] // 移除了 'query'
-        : ['error']
+        : ['error'],
+    transactionOptions: {
+      maxWait: 10000,
+      timeout: 15000
+    }
   });
 
 if (process.env.NODE_ENV !== 'production') globalThis.prisma = db;
