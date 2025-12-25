@@ -9,6 +9,7 @@ import { CouponType } from '@prisma/client';
 export type CouponListParams = {
   page?: number;
   pageSize?: number;
+  totalPages?: number;
   search?: string;
   isActive?: boolean;
   sortBy?: 'createdAt' | 'usageCount';
@@ -65,7 +66,10 @@ export async function getCoupons(params: CouponListParams) {
 
   const transferredItems = items.map((item) => ({
     ...item,
-    value: Number(item.value)
+    value: Number(item.value),
+    startDate: item.startDate.toISOString(),
+    endDate: item.endDate.toISOString(),
+    createdAt: item.createdAt.toISOString()
   }));
 
   return {
@@ -80,9 +84,22 @@ export async function getCoupons(params: CouponListParams) {
  * 获取单个 Coupon（详情页 / 编辑页）
  */
 export async function getCouponById(id: string) {
-  return db.coupons.findUnique({
+  const coupon = await db.coupons.findUnique({
     where: { id }
   });
+
+  if (!coupon) return null;
+
+  return {
+    ...coupon,
+    value: Number(coupon.value),
+    minPurchase: coupon.minPurchase ? Number(coupon.minPurchase) : null,
+    maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+    startDate: coupon.startDate.toISOString(),
+    endDate: coupon.endDate.toISOString(),
+    createdAt: coupon.createdAt.toISOString(),
+    updatedAt: coupon.updatedAt.toISOString()
+  };
 }
 
 /**
@@ -99,10 +116,42 @@ export async function createCoupon(data: {
   usageLimitPerCustomer?: number;
   startDate: Date;
   endDate: Date;
+  isActive?: boolean;
 }) {
-  return db.coupons.create({
-    data
+  const coupon = await db.coupons.create({
+    data: {
+      code: data.code,
+      description: data.description,
+      type: data.type,
+      value: data.value,
+      minPurchase: data.minPurchase,
+      maxDiscount: data.maxDiscount,
+      usageLimit: data.usageLimit,
+      usageLimitPerCustomer: data.usageLimitPerCustomer,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      isActive: data.isActive ?? true
+    }
   });
+
+  // 序列化 Decimal 和 Date 类型以便传递给 Client Component
+  return {
+    id: coupon.id,
+    code: coupon.code,
+    description: coupon.description,
+    type: coupon.type,
+    value: Number(coupon.value),
+    minPurchase: coupon.minPurchase ? Number(coupon.minPurchase) : null,
+    maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+    usageLimit: coupon.usageLimit,
+    usageLimitPerCustomer: coupon.usageLimitPerCustomer,
+    usageCount: coupon.usageCount,
+    startDate: coupon.startDate.toISOString(),
+    endDate: coupon.endDate.toISOString(),
+    isActive: coupon.isActive,
+    createdAt: coupon.createdAt.toISOString(),
+    updatedAt: coupon.updatedAt.toISOString()
+  };
 }
 
 /**
@@ -123,20 +172,44 @@ export async function updateCoupon(
     isActive: boolean;
   }>
 ) {
-  return db.coupons.update({
+  const coupon = await db.coupons.update({
     where: { id },
     data
   });
+
+  // 序列化 Decimal 和 Date 类型
+  return {
+    ...coupon,
+    value: Number(coupon.value),
+    minPurchase: coupon.minPurchase ? Number(coupon.minPurchase) : null,
+    maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+    startDate: coupon.startDate.toISOString(),
+    endDate: coupon.endDate.toISOString(),
+    createdAt: coupon.createdAt.toISOString(),
+    updatedAt: coupon.updatedAt.toISOString()
+  };
 }
 
 /**
  * 启用 / 停用 Coupon（List Page 常用）
  */
 export async function toggleCouponStatus(id: string, isActive: boolean) {
-  return db.coupons.update({
+  const coupon = await db.coupons.update({
     where: { id },
     data: { isActive }
   });
+
+  // 序列化 Decimal 和 Date 类型
+  return {
+    ...coupon,
+    value: Number(coupon.value),
+    minPurchase: coupon.minPurchase ? Number(coupon.minPurchase) : null,
+    maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+    startDate: coupon.startDate.toISOString(),
+    endDate: coupon.endDate.toISOString(),
+    createdAt: coupon.createdAt.toISOString(),
+    updatedAt: coupon.updatedAt.toISOString()
+  };
 }
 
 /**
@@ -151,4 +224,17 @@ export async function isCouponExpired(id: string) {
   if (!coupon) return true;
 
   return coupon.endDate < new Date();
+}
+
+/**
+ * delete coupon by id (
+ */
+export async function deleteCoupon(id: string) {
+  try {
+    await db.coupons.delete({
+      where: { id }
+    });
+  } catch (error) {
+    throw new Error('Failed to delete coupon');
+  }
 }

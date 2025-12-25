@@ -16,10 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier -c -w .",
     "prepare": "husky",
-    "postinstall": "pnpm db:sync && prisma generate",
-    "db:sync": "cp ../db/prisma/schema.prisma prisma/schema.prisma",
-    "db:generate": "pnpm db:sync && prisma generate",
-    "db:deploy": "pnpm db:sync && prisma migrate deploy",
+    "postinstall": "prisma generate",
     "db:pull": "prisma db pull",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts"
