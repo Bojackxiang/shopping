@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm db:sync && prisma generate && next dev --turbopack",
-    "build": "pnpm db:sync && prisma generate && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "eslint src --fix && pnpm format",
@@ -17,6 +17,8 @@
     "format:check": "prettier -c -w .",
     "prepare": "husky",
     "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
     "db:pull": "prisma db pull",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts"
