@@ -7,10 +7,10 @@
     "build": "pnpm db:sync && prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
-    "webhook:start": "ngrok http 3000",
+    "webhook:start": "ngrok http 3005",
     "postinstall": "pnpm db:sync && prisma generate",
     "db:sync": "cp ../db/prisma/schema.prisma prisma/schema.prisma",
-    "db:generate": "pnpm db:sync && prisma generate",
+    "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"

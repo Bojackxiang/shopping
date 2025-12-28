@@ -451,6 +451,7 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   REFUNDED
+  UNKNOWN
 }
 
 enum PaymentStatus {
@@ -458,6 +459,7 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  UNKNOWN
 }
 
 enum ProductStatus {

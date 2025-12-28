@@ -7,7 +7,8 @@ type OrderStatus =
   | 'SHIPPED'
   | 'DELIVERED'
   | 'CANCELLED'
-  | 'REFUNDED';
+  | 'REFUNDED'
+  | 'UNKNOWN';
 
 interface OrderStatusBadgeProps {
   status: OrderStatus;
@@ -21,7 +22,8 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
     SHIPPED: 'bg-primary/10 text-primary border-primary/20',
     DELIVERED: 'bg-success/10 text-success border-success/20',
     CANCELLED: 'bg-muted text-muted-foreground border-border',
-    REFUNDED: 'bg-destructive/10 text-destructive border-destructive/20'
+    REFUNDED: 'bg-destructive/10 text-destructive border-destructive/20',
+    UNKNOWN: 'bg-secondary/10 text-secondary border-secondary/20'
   };
 
   return (

@@ -5,6 +5,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 
 export async function POST(req: Request) {
+  console.log("📬 Clerk webhook received");
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
