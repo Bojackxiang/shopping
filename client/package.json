@@ -8,11 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "webhook:start": "ngrok http 3005",
-    "postinstall": "pnpm db:sync && prisma generate",
-    "db:sync": "cp ../db/prisma/schema.prisma prisma/schema.prisma",
-    "db:generate": "prisma generate",
-    "db:pull": "prisma db pull",
-    "db:push": "prisma db push",
+    "postinstall": "prisma generate",
+    "db:pull": "prisma db pull && prisma generate",
     "db:studio": "prisma studio"
   },
   "dependencies": {
