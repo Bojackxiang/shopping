@@ -61,3 +61,58 @@ export const getCustomerById = async (id: string) => {
     throw handleError(error);
   }
 };
+
+/**
+ * 获取月度新客户和增长率
+ */
+export const getMonthlyNewCustomers = async () => {
+  try {
+    const now = new Date();
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0,
+      23,
+      59,
+      59
+    );
+
+    // 获取本月新客户数
+    const currentMonthCount = await db.customers.count({
+      where: {
+        createdAt: { gte: currentMonth }
+      }
+    });
+
+    // 获取上月新客户数
+    const lastMonthCount = await db.customers.count({
+      where: {
+        createdAt: {
+          gte: lastMonthStart,
+          lte: lastMonthEnd
+        }
+      }
+    });
+
+    // 计算增长率
+    const growthRate =
+      lastMonthCount === 0
+        ? 100
+        : Number(
+            (
+              ((currentMonthCount - lastMonthCount) / lastMonthCount) *
+              100
+            ).toFixed(1)
+          );
+
+    return {
+      newCustomers: currentMonthCount,
+      newCustomersLastMonth: lastMonthCount,
+      newCustomersGrowthRate: growthRate
+    };
+  } catch (error) {
+    throw handleError(error);
+  }
+};

@@ -557,3 +557,101 @@ export async function getOrderStats(params: {
     }
   };
 }
+
+/**
+ * 获取最近的销售数据
+ */
+export async function getRecentSales(limit: number = 5) {
+  const orders = await db.orders.findMany({
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    where: {
+      paymentStatus: PaymentStatus.PAID
+    },
+    include: {
+      customers: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          imageUrl: true
+        }
+      }
+    }
+  });
+
+  return orders.map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    total: Number(order.total),
+    createdAt: order.createdAt.toISOString(),
+    customer: order.customers
+      ? {
+          id: order.customers.id,
+          email: order.customers.email,
+          name:
+            order.customers.firstName && order.customers.lastName
+              ? `${order.customers.firstName} ${order.customers.lastName}`
+              : order.customers.username || order.customers.email,
+          imageUrl: order.customers.imageUrl
+        }
+      : null
+  }));
+}
+
+/**
+ * 获取月度收入和增长率
+ */
+export async function getMonthlyRevenue() {
+  const now = new Date();
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    0,
+    23,
+    59,
+    59
+  );
+
+  // 获取本月数据
+  const currentMonthStats = await db.orders.aggregate({
+    where: {
+      createdAt: { gte: currentMonth },
+      paymentStatus: PaymentStatus.PAID
+    },
+    _sum: { total: true }
+  });
+
+  // 获取上月数据
+  const lastMonthStats = await db.orders.aggregate({
+    where: {
+      createdAt: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd
+      },
+      paymentStatus: PaymentStatus.PAID
+    },
+    _sum: { total: true }
+  });
+
+  const currentRevenue = Number(currentMonthStats._sum.total || 0);
+  const lastRevenue = Number(lastMonthStats._sum.total || 0);
+
+  // 计算增长率
+  const growthRate =
+    lastRevenue === 0
+      ? 100
+      : Number(
+          (((currentRevenue - lastRevenue) / lastRevenue) * 100).toFixed(1)
+        );
+
+  return {
+    totalRevenue: currentRevenue,
+    totalRevenueLastMonth: lastRevenue,
+    totalRevenueGrowthRate: growthRate
+  };
+}
