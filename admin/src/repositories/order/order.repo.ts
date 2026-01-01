@@ -655,3 +655,56 @@ export async function getMonthlyRevenue() {
     totalRevenueGrowthRate: growthRate
   };
 }
+
+// ...existing code...
+
+/**
+ * 获取过去6个月的订单金额统计
+ */
+export async function getSixMonthsRevenueData() {
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+
+  // 获取过去6个月的每月数据
+  const monthlyData = await db.orders.groupBy({
+    by: ['createdAt'],
+    where: {
+      createdAt: { gte: sixMonthsAgo },
+      paymentStatus: PaymentStatus.PAID
+    },
+    _sum: { total: true },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  // 按月份聚合数据
+  const aggregatedData: { [key: string]: number } = {};
+
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const monthKey = date.toLocaleString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
+    aggregatedData[monthKey] = 0;
+  }
+
+  // 计算每个月的收入
+  monthlyData.forEach((item) => {
+    const date = new Date(item.createdAt);
+    const monthKey = date.toLocaleString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
+    if (aggregatedData[monthKey] !== undefined) {
+      aggregatedData[monthKey] += Number(item._sum.total || 0);
+    }
+  });
+
+  // 转换为图表数据格式
+  const chartData = Object.entries(aggregatedData).map(([month, revenue]) => ({
+    month,
+    revenue: Number(revenue.toFixed(2))
+  }));
+
+  return chartData;
+}

@@ -3,9 +3,9 @@
 import useSWR from 'swr';
 import { getMonthlyRevenue } from '@/repositories/order/order.repo';
 import { getMonthlyNewCustomers } from '@/repositories/customer/customer.repository';
+import { getSixMonthsRevenueData } from '@/repositories/order/order.repo';
 
 const useOverView = () => {
-  // 获取月度收入数据
   const { data: revenueData, isLoading: revenueLoading } = useSWR(
     'monthly-revenue',
     getMonthlyRevenue,
@@ -25,6 +25,15 @@ const useOverView = () => {
     }
   );
 
+  const { data: sixMonthsData, isLoading: sixMonthsLoading } = useSWR(
+    'six-months-revenue',
+    getSixMonthsRevenueData,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false
+    }
+  );
+
   const isLoading = revenueLoading || customersLoading;
 
   return {
@@ -38,9 +47,8 @@ const useOverView = () => {
     newCustomersGrowthRate: customersData?.newCustomersGrowthRate || 0,
     newCustomersLastMonth: customersData?.newCustomersLastMonth || 0,
 
-    // 活跃账户（暂时使用固定值，后续可以添加实际逻辑）
-    activeAccount: 4567,
-    activeAccountGrowthRate: 5.4,
+    // 六个月收入数据
+    sixMonthsRevenueData: sixMonthsData || [],
 
     // 加载状态
     isLoading
