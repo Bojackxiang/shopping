@@ -15,8 +15,7 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent
+  ChartTooltip
 } from '@/components/ui/chart';
 import useOverView from '../hook/use-overview';
 

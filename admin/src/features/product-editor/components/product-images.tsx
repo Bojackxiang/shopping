@@ -70,6 +70,7 @@ export default function ProductImages({ onChange }: ProductImagesProps) {
       const results = await Promise.all(uploadPromises);
 
       const newImages: ProductImage[] = results.map((result, index) => ({
+        id: crypto.randomUUID(), // 生成临时 ID
         url: result.url,
         publicId: result.publicId,
         altText: null,

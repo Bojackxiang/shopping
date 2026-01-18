@@ -44,6 +44,12 @@ export type {
 } from "@prisma/client";
 
 /**
+ * Prisma Enums - 枚举类型
+ * 用于类型安全的状态判断和比较
+ */
+export { OrderStatus } from "@prisma/client";
+
+/**
  * 常用的组合类型
  */
 

@@ -9,8 +9,14 @@ const variantSchema = z.object({
   barcode: z.string().optional().nullable(),
   name: z.string().optional().nullable(), // 变体名称，如 "大号-红色"
   price: z.number().min(0, 'Price must be positive'),
-  compareAtPrice: z.number().optional().nullable(),
-  cost: z.number().optional().nullable(),
+  compareAtPrice: z.preprocess(
+    (val) => (val === '' || isNaN(Number(val)) ? null : Number(val)),
+    z.number().optional().nullable()
+  ),
+  cost: z.preprocess(
+    (val) => (val === '' || isNaN(Number(val)) ? null : Number(val)),
+    z.number().optional().nullable()
+  ),
   inventory: z.number().int().min(0).default(0),
   lowStockThreshold: z.number().int().default(5),
   trackInventory: z.boolean().default(true),
@@ -18,7 +24,10 @@ const variantSchema = z.object({
   size: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
   material: z.string().optional().nullable(),
-  weight: z.number().optional().nullable(),
+  weight: z.preprocess(
+    (val) => (val === '' || isNaN(Number(val)) ? null : Number(val)),
+    z.number().optional().nullable()
+  ),
   attributes: z.any().optional().nullable(),
   isDefault: z.boolean().default(false),
   sortOrder: z.number().int().default(0),

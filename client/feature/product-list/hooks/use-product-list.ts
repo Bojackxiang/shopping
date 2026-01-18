@@ -15,7 +15,6 @@ export const useProductListWithCategory = (
       await delay(500);
       // If categoryId is provided, fetch products by category
       if (categoryId && categoryId !== "all") {
-        console.log("-> fetch target category", { categoryId, page });
         const result = await actions.getProductsByPathAction({
           categoryId: categoryId,
           limit: PRODUCT_LIST_PAGE_SIZE,
@@ -29,7 +28,6 @@ export const useProductListWithCategory = (
 
       // If categoryId is "all", fetch all products
       if (categoryId === "all") {
-        console.log("-> fetch All category", { categoryId, page });
         const result = await actions.getAllProductsAction({
           limit: PRODUCT_LIST_PAGE_SIZE,
           offset: page ? (page - 1) * PRODUCT_LIST_PAGE_SIZE : 0,

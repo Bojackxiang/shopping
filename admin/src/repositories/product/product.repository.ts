@@ -271,11 +271,15 @@ export const updateProduct = async (id: string, data: UpdateProductInput) => {
         const existingIds = existingVariants.map((v) => v.id);
         const incomingIds = data.variants.filter((v) => v.id).map((v) => v.id!);
 
-        // Delete removed variants
-        const toDelete = existingIds.filter((id) => !incomingIds.includes(id));
-        if (toDelete.length > 0) {
-          await tx.product_variants.deleteMany({
-            where: { id: { in: toDelete } }
+        // To deactivate
+        const toDeactivate = existingIds.filter(
+          (id) => !incomingIds.includes(id)
+        );
+
+        if (toDeactivate.length > 0) {
+          await tx.product_variants.updateMany({
+            where: { id: { in: toDeactivate } },
+            data: { isActive: false }
           });
         }
 
@@ -604,6 +608,72 @@ export const reorderProductImages = async (
     );
 
     return { success: true };
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// ============ Admin Functions (后台管理专用) ============
+
+/**
+ * 后台管理：获取产品详情（包含所有 variants，包括已停售的）
+ * 用于产品编辑页面，需要显示所有规格进行管理
+ */
+export const getProductByIdForAdmin = async (id: string | null) => {
+  try {
+    if (id === null) {
+      return null;
+    }
+    const product = await db.products.findUnique({
+      where: { id },
+      include: {
+        categories: true,
+        variants: {
+          // 后台显示所有 variant（包括已停售的 isActive: false）
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            variant_images: {
+              orderBy: { sortOrder: 'asc' }
+            }
+          }
+        },
+        product_images: {
+          orderBy: { sortOrder: 'asc' }
+        },
+        product_tags: {
+          include: {
+            tags: true
+          }
+        },
+        product_faqs: {
+          // 后台显示所有 FAQ
+          orderBy: { sortOrder: 'asc' }
+        },
+        reviews: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          include: {
+            customers: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                imageUrl: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            variants: true,
+            reviews: true,
+            wishlist_items: true
+          }
+        }
+      }
+    });
+
+    return product ? serializeProduct(product) : null;
   } catch (error) {
     throw handleError(error);
   }

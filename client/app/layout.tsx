@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/provider/auth-provider";
+import { ConfirmDialogProvider } from "@/provider/confirm-dialog-provider";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+        </AuthProvider>
         <Toaster
           position="top-center"
           toastOptions={{

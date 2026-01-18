@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, ChevronDown, Archive, RotateCcw } from 'lucide-react';
 import { useProductForm } from '../context/product-form-context';
 
 export default function ProductVariants() {
@@ -76,13 +76,35 @@ export default function ProductVariants() {
   ) => {
     e.preventDefault();
 
-    // If deleting the default variant, set the first remaining variant as default
-    const wasDefault = variants?.[index]?.isDefault;
-    remove(index);
+    const variant = variants?.[index];
 
-    if (wasDefault && fields.length > 1) {
-      // Set the first remaining variant as default
-      setValue('variants.0.isDefault', true, { shouldDirty: true });
+    // 如果 variant 有 id（从数据库来的），使用软删除
+    if (variant?.id) {
+      // 软删除：只设置 isActive = false
+      setValue(`variants.${index}.isActive`, false, { shouldDirty: true });
+
+      // 如果删除的是默认 variant，设置第一个在售的为默认
+      if (variant.isDefault) {
+        const firstActiveIndex = variants.findIndex(
+          (v: any, i: number) => i !== index && v?.isActive !== false
+        );
+        if (firstActiveIndex !== -1) {
+          setValue(`variants.${firstActiveIndex}.isDefault`, true, {
+            shouldDirty: true
+          });
+          setValue(`variants.${index}.isDefault`, false, {
+            shouldDirty: true
+          });
+        }
+      }
+    } else {
+      // 如果是新创建的（没有 id），直接从数组中移除
+      const wasDefault = variant?.isDefault;
+      remove(index);
+
+      if (wasDefault && fields.length > 1) {
+        setValue('variants.0.isDefault', true, { shouldDirty: true });
+      }
     }
   };
 
@@ -132,7 +154,9 @@ export default function ProductVariants() {
                   <button
                     type='button'
                     onClick={(e) => handleExpandVariant(e, index)}
-                    className='border-border hover:bg-muted/50 flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors'
+                    className={`border-border hover:bg-muted/50 flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors ${
+                      variant?.isActive === false ? 'bg-muted opacity-60' : ''
+                    }`}
                   >
                     <div className='flex flex-1 items-center gap-3'>
                       <ChevronDown
@@ -148,6 +172,12 @@ export default function ProductVariants() {
                               (Default)
                             </span>
                           )}
+                          {variant?.isActive === false && (
+                            <span className='ml-2 flex items-center gap-1 text-xs font-semibold text-red-600'>
+                              <Archive className='h-3 w-3' />
+                              Discontinued
+                            </span>
+                          )}
                         </p>
                         <p className='text-muted-foreground text-sm'>
                           {variant?.sku || 'No SKU'}
@@ -159,7 +189,9 @@ export default function ProductVariants() {
                         ${variant?.price?.toFixed(2) || '0.00'}
                       </p>
                       <p className='text-muted-foreground text-sm'>
-                        {variant?.inventory || 0} in stock
+                        {variant?.isActive === false
+                          ? 'Discontinued'
+                          : `${variant?.inventory || 0} in stock`}
                       </p>
                     </div>
                   </button>
@@ -319,25 +351,57 @@ export default function ProductVariants() {
 
                       {/* Actions */}
                       <div className='flex gap-2 pt-2'>
-                        <Button
-                          type='button'
-                          size='sm'
-                          variant={variant?.isDefault ? 'default' : 'outline'}
-                          onClick={(e) => handleSetDefault(e, index)}
-                        >
-                          {variant?.isDefault ? '✓ Default' : 'Set as Default'}
-                        </Button>
-                        <Button
-                          type='button'
-                          size='sm'
-                          variant='destructive'
-                          onClick={(e) => handleDeleteVariant(e, index)}
-                          className='ml-auto gap-2'
-                          disabled={fields.length === 1}
-                        >
-                          <Trash2 className='h-4 w-4' />
-                          Delete
-                        </Button>
+                        {variant?.isActive === false ? (
+                          // Discontinued variant shows restore button
+                          <>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='default'
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setValue(`variants.${index}.isActive`, true, {
+                                  shouldDirty: true
+                                });
+                              }}
+                              className='gap-2'
+                            >
+                              <RotateCcw className='h-4 w-4' />
+                              Restore
+                            </Button>
+                            <div className='text-muted-foreground ml-auto flex items-center text-sm'>
+                              ⚠️ This variant is discontinued and hidden from
+                              customers
+                            </div>
+                          </>
+                        ) : (
+                          // 正常销售的 variant 显示常规按钮
+                          <>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant={
+                                variant?.isDefault ? 'default' : 'outline'
+                              }
+                              onClick={(e) => handleSetDefault(e, index)}
+                            >
+                              {variant?.isDefault
+                                ? '✓ Default'
+                                : 'Set as Default'}
+                            </Button>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='destructive'
+                              onClick={(e) => handleDeleteVariant(e, index)}
+                              className='ml-auto gap-2'
+                              disabled={fields.length === 1}
+                            >
+                              <Archive className='h-4 w-4' />
+                              Discontinue
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

@@ -24,13 +24,8 @@ function transformProductData(products: any[]) {
       product.variants?.reduce((sum: number, v: any) => sum + v.inventory, 0) ||
       0;
 
-    // 转换状态
-    let status = 'active';
-    if (product.status === ProductStatus.DRAFT) {
-      status = 'draft';
-    } else if (stock === 0) {
-      status = 'out_of_stock';
-    }
+    // 转换状态 - 直接使用 ProductStatus 枚举值
+    const status = product.status; // DRAFT, ACTIVE, or ARCHIVED
 
     // 转换可见性
     const visibility =
@@ -98,6 +93,8 @@ export function ProductListView() {
     orderBy: 'createdAt'
   });
 
+  console.log({ rawProducts });
+
   // 转换数据格式
   const products = useMemo(() => {
     return transformProductData(rawProducts);
@@ -116,7 +113,6 @@ export function ProductListView() {
         filters.status = ProductStatus.DRAFT;
       } else if (localFilters.status === 'out_of_stock') {
         filters.status = ProductStatus.ACTIVE;
-        // 库存过滤需要在前端做，因为后端没有直接的 out_of_stock 状态
       }
     }
 

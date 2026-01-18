@@ -26,13 +26,17 @@ interface RichTextEditorProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  minHeight?: string; // 新增：最小高度
+  maxHeight?: string; // 新增：最大高度
 }
 
 export default function RichTextEditor({
   value = '',
   onChange,
   placeholder = 'Write your content here...',
-  className
+  className,
+  minHeight = '200px', // 默认最小高度
+  maxHeight = '400px' // 默认最大高度
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -68,8 +72,8 @@ export default function RichTextEditor({
     content: value,
     editorProps: {
       attributes: {
-        class: 'focus:outline-none min-h-[200px] p-4',
-        style: 'color: var(--foreground)'
+        class: 'focus:outline-none p-4',
+        style: `color: var(--foreground);`
       }
     },
     onUpdate: ({ editor }) => {
@@ -103,15 +107,15 @@ export default function RichTextEditor({
 
   return (
     <div
-      className={cn('rounded-lg border', className)}
+      className={cn('flex flex-col rounded-lg border', className)}
       style={{
         borderColor: 'var(--border)',
         backgroundColor: 'var(--background)'
       }}
     >
-      {/* Toolbar */}
+      {/* Toolbar - Fixed at top */}
       <div
-        className='flex flex-wrap gap-1 border-b p-2'
+        className='flex flex-shrink-0 flex-wrap gap-1 border-b p-2'
         style={{ borderColor: 'var(--border)' }}
       >
         <Button
@@ -210,11 +214,23 @@ export default function RichTextEditor({
         </div>
       </div>
 
-      {/* Editor Content */}
-      <EditorContent editor={editor} className='rich-text-content' />
+      {/* Editor Content - Scrollable container */}
+      <div
+        className='overflow-y-auto'
+        style={{
+          minHeight: minHeight,
+          maxHeight: maxHeight
+        }}
+      >
+        <EditorContent editor={editor} className='rich-text-content' />
+      </div>
 
       {/* Editor Styles */}
       <style jsx global>{`
+        .rich-text-content .ProseMirror {
+          outline: none;
+        }
+
         .rich-text-content h2 {
           font-size: 1.5rem;
           font-weight: 600;

@@ -1,13 +1,10 @@
 import { MapPin, Edit3, Trash2, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAddress, useRemoveAddress } from "@/hooks";
-import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 
-export default function AddressesContent() {
+export default function ShippingAddressView() {
   const { data, error, isLoading } = useAddress();
   const { removeAddress } = useRemoveAddress();
-
-  const { confirm } = useConfirmDialog();
 
   // Helper function to format full address
   const formatAddress = (address: NonNullable<typeof data>[0]) => {
@@ -20,10 +17,6 @@ export default function AddressesContent() {
     ].filter(Boolean);
     return parts.join(", ");
   };
-
-  function onHandleDelete(id: string) {
-    return removeAddress(id);
-  }
 
   return (
     <div className="space-y-8">
@@ -98,7 +91,7 @@ export default function AddressesContent() {
               <div className="space-y-4">
                 {/* Name & Icon */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                     <MapPin className="w-5 h-5 text-foreground/70" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -134,7 +127,7 @@ export default function AddressesContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeAddress(address.id)}
+                    onClick={() => removeAddress(address)}
                     className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

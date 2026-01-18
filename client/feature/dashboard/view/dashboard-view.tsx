@@ -88,25 +88,6 @@ const sampleOrders = [
   },
 ];
 
-const sampleAddresses = [
-  {
-    id: 1,
-    label: "Home",
-    name: "Sarah Zhang",
-    phone: "+1 (555) 123-4567",
-    address: "123 Pearl Street, Apt 5B, San Francisco, CA 94102",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    label: "Office",
-    name: "Sarah Zhang",
-    phone: "+1 (555) 123-4567",
-    address: "456 Crystal Tower, 15th Floor, San Francisco, CA 94105",
-    isDefault: false,
-  },
-];
-
 const sampleFavorites = [
   {
     id: 1,
@@ -196,9 +177,7 @@ export default function DashboardView() {
     <OrdersContent orders={sampleOrders} onConfirmDelivery={confirmDelivery} />
   );
 
-  const renderAddresses = () => (
-    <AddressesContent addresses={sampleAddresses} />
-  );
+  const renderAddresses = () => <AddressesContent />;
 
   const renderProfile = () => (
     <ProfileContent

@@ -12,6 +12,11 @@ import { MoreHorizontal, Edit, Eye, Copy, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useConfirmDialog } from '@/components/confirm-dialog-provider';
 import { deleteProduct } from '@/repositories';
+import {
+  getStatusLabel,
+  getStatusStyles,
+  getVisibilityStyles
+} from '../utils/product-status';
 
 interface Product {
   id: string;
@@ -157,29 +162,4 @@ export function ProductRow({
       </td>
     </tr>
   );
-}
-
-function getStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    active: 'Active',
-    draft: 'Draft',
-    out_of_stock: 'Out of Stock'
-  };
-  return labels[status] || status;
-}
-
-function getStatusStyles(status: string) {
-  const styles: Record<string, string> = {
-    active:
-      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-    out_of_stock: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-  };
-  return styles[status] || 'bg-gray-100 text-gray-800';
-}
-
-function getVisibilityStyles(visibility: string) {
-  return visibility === 'published'
-    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-    : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
 }
