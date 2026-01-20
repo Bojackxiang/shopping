@@ -18,4 +18,5 @@ export { fetchCurrentCustomerAction } from "./customer.action";
 export {
   fetchUserAddressesAction,
   removeUserAddressAction,
+  saveUserAddressAction,
 } from "./address.action";

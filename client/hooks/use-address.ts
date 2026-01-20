@@ -8,6 +8,7 @@ import type { AddressBasicInfo } from "@/repo/address.repo";
 import { useConfirmDialog } from "./use-confirm-dialog";
 import { toast } from "sonner";
 import useSWR from "swr";
+import { useState } from "react";
 
 export const useAddress = () => {
   const { data, error, isLoading, mutate } = useSWR<AddressBasicInfo[]>(
@@ -59,5 +60,40 @@ export const useRemoveAddress = () => {
 
   return {
     removeAddress,
+  };
+};
+
+export const useSaveAddress = () => {
+  const { mutate } = useAddress();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const saveAddress = async (
+    addressData: Partial<AddressBasicInfo> & { id?: string },
+  ) => {
+    setIsLoading(true);
+    try {
+      // Dynamic import to avoid circular dependency issues
+      const { saveUserAddressAction } = await import("@/app/actions");
+
+      const result = await saveUserAddressAction(addressData);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // After saving, refresh the addresses list
+      mutate();
+
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    saveAddress,
+    isLoading,
   };
 };
