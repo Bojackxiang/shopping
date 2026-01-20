@@ -31,7 +31,6 @@ import SideBarNav from "../component/side-bar-nav";
 import OverviewContent from "../component/overview-content";
 import OrdersContent from "../component/orders-content";
 import AddressesContent from "../component/addresses-content";
-import ProfileContent from "../component/profile-content";
 import FavoritesContent from "../component/favorites-content";
 import CouponsContent from "../component/coupons-content";
 
@@ -40,7 +39,6 @@ const navigationItems = [
   { id: "overview", label: "Account Overview", icon: User },
   { id: "orders", label: "My Orders", icon: Package },
   { id: "addresses", label: "Shipping Addresses", icon: MapPin },
-  { id: "profile", label: "Personal Information", icon: Settings },
   { id: "favorites", label: "My Favorites", icon: Heart },
   { id: "coupons", label: "Coupons", icon: Ticket },
 ];
@@ -179,24 +177,6 @@ export default function DashboardView() {
 
   const renderAddresses = () => <AddressesContent />;
 
-  const renderProfile = () => (
-    <ProfileContent
-      user={sampleUser}
-      editingProfile={editingProfile}
-      profileData={profileData}
-      onEditClick={() => setEditingProfile(true)}
-      onSave={handleProfileSave}
-      onCancel={() => {
-        setEditingProfile(false);
-        setProfileData({
-          phone: sampleUser.phone,
-          homeAddress: sampleUser.homeAddress,
-        });
-      }}
-      onProfileDataChange={setProfileData}
-    />
-  );
-
   const renderFavorites = () => (
     <FavoritesContent
       favorites={sampleFavorites}
@@ -214,8 +194,6 @@ export default function DashboardView() {
         return renderOrders();
       case "addresses":
         return renderAddresses();
-      case "profile":
-        return renderProfile();
       case "favorites":
         return renderFavorites();
       case "coupons":
