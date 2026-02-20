@@ -61,7 +61,7 @@ export function ProductListView() {
   });
   const products = pageList.products?.data?.products;
   const paginationData = pageList.products.data;
-  const isLoading = !pageList.products.data;
+  const isLoading = pageList.products.isLoading;
 
   // --------------------
   // Handler functions
