@@ -1,7 +1,7 @@
-import React from 'react';
+import CouponDistributionView from '@/features/coupon/component/coupon-distribution-view';
 
 const page = () => {
-  return <div></div>;
+  return <CouponDistributionView />;
 };
 
 export default page;
