@@ -2,17 +2,7 @@
 
 import { CategoryRepo } from "@/repo";
 import { ProductRepo } from "@/repo/product.repo";
-
-function serializeProducts<T>(products: T): T {
-  return JSON.parse(
-    JSON.stringify(products, (key, value) => {
-      if (typeof value === "object" && value !== null && "toJSON" in value) {
-        return value.toJSON();
-      }
-      return value;
-    }),
-  );
-}
+import { serializePrisma as serializeProducts } from "@/utils/serialize-prisma";
 
 export async function getHotProductsAction(limit: number) {
   try {

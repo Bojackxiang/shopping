@@ -8,6 +8,7 @@ import type {
 } from "@/repo/favorite.repo";
 import { emitCustomerEvent } from "@/lib/events/dispatcher";
 import { CustomerEventType } from "@prisma/client";
+import { serializePrisma } from "@/utils/serialize-prisma";
 
 /**
  * Fetch all user favorites
@@ -28,7 +29,7 @@ export const fetchUserFavoritesAction = async () => {
 
     const favorites = await Favorite.getFavoritesByCustomerId(customer.id);
 
-    return { data: favorites, error: null };
+    return { data: serializePrisma(favorites), error: null };
   } catch (error) {
     console.error("Error fetching user favorites:", error);
     return {
