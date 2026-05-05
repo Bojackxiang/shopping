@@ -5,6 +5,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { emitCustomerEvent } from "@/lib/events/dispatcher";
 import { CustomerEventType } from "@prisma/client";
+import { CustomerRepo } from "@/repo";
 
 export async function POST(req: Request) {
   console.log("📬 Clerk webhook received");
@@ -69,11 +70,8 @@ export async function POST(req: Request) {
         },
       });
 
-      await emitCustomerEvent({
-        type: CustomerEventType.USER_SIGNUP,
-        customerId: customer.id,
-        payload: { clerkId: id, email: customer.email },
-      });
+      // USER_SIGNUP event is auto-emitted by audit-events Prisma extension
+      // when db.customers.create runs above.
 
       return new Response("Success: Customer created and metadata updated", {
         status: 200,
@@ -84,6 +82,28 @@ export async function POST(req: Request) {
         status: 500,
       });
     }
+  }
+
+  if (evt.type === "session.created") {
+    const { user_id, id: sessionId } = evt.data as {
+      user_id?: string;
+      id?: string;
+    };
+    if (user_id) {
+      try {
+        const customer = await CustomerRepo.fetchCustomerByClerkId(user_id);
+        if (customer) {
+          await emitCustomerEvent({
+            type: CustomerEventType.USER_LOGIN,
+            customerId: customer.id,
+            payload: { clerkId: user_id, sessionId },
+          });
+        }
+      } catch (err) {
+        console.error("[clerk webhook] failed to emit USER_LOGIN", err);
+      }
+    }
+    return new Response("Success: login recorded", { status: 200 });
   }
 
   return new Response("Success: Webhook received", { status: 200 });

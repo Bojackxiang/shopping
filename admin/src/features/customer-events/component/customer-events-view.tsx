@@ -35,16 +35,29 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Search, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 const ALL = '__ALL__';
 
 const TYPE_OPTIONS: CustomerEventType[] = [
   'USER_SIGNUP',
+  'USER_LOGIN',
+  'PAGE_VIEWED',
+  'SORT_CHANGED',
+  'FILTER_CHANGED',
+  'SEARCH_PERFORMED',
+  'CART_MODAL_OPENED',
   'FAVORITE_ADDED',
+  'FAVORITE_REMOVED',
+  'CART_ITEM_ADDED',
+  'CART_ITEM_QUANTITY_CHANGED',
+  'CART_ITEM_REMOVED',
+  'ADDRESS_SAVED',
+  'ADDRESS_REMOVED',
   'BIRTHDAY',
   'ORDER_CREATED',
   'ORDER_PAID',
@@ -79,6 +92,8 @@ export function CustomerEventsView() {
   const [page, setPage] = useState(1);
   const [type, setType] = useState<string>(ALL);
   const [status, setStatus] = useState<string>(ALL);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +113,8 @@ export function CustomerEventsView() {
           page,
           pageSize: PAGE_SIZE,
           type: type === ALL ? undefined : (type as CustomerEventType),
-          status: status === ALL ? undefined : (status as EventProcessStatus)
+          status: status === ALL ? undefined : (status as EventProcessStatus),
+          search: search || undefined
         });
         if (cancelled) return;
         setItems(res.items);
@@ -112,7 +128,18 @@ export function CustomerEventsView() {
     return () => {
       cancelled = true;
     };
-  }, [page, type, status, refreshTick]);
+  }, [page, type, status, search, refreshTick]);
+
+  // debounce search input → search state (300ms)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (searchInput !== search) {
+        setSearch(searchInput);
+        setPage(1);
+      }
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchInput, search]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -130,13 +157,29 @@ export function CustomerEventsView() {
   };
 
   return (
-    <div className='space-y-4 p-4 md:p-6'>
-      <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
-        <div>
-          <h1 className='text-2xl font-semibold'>Customer Event Log</h1>
-          <p className='text-muted-foreground text-sm'>
-            Live view of every event captured by the coupon trigger system. Auto-refreshes every 5s.
-          </p>
+    <div className='flex w-full min-w-0 flex-col gap-3 p-4 md:p-6'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div className='flex flex-wrap items-center gap-x-4 gap-y-1'>
+          <h1 className='text-xl font-semibold leading-none'>Customer Event Log</h1>
+          <div className='text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs'>
+            <Stat label='Total' value={stats.total} />
+            <span className='opacity-30'>·</span>
+            <Stat label='Processed' value={stats.byStatus.PROCESSED ?? 0} />
+            <span className='opacity-30'>·</span>
+            <Stat label='Pending' value={stats.byStatus.PENDING ?? 0} />
+            <span className='opacity-30'>·</span>
+            <Stat
+              label='Failed'
+              value={stats.byStatus.FAILED ?? 0}
+              variant='danger'
+            />
+            <span className='opacity-30'>·</span>
+            <Stat
+              label='Granted'
+              value={stats.granted}
+              variant='success'
+            />
+          </div>
         </div>
         <div className='flex items-center gap-3'>
           <div className='flex items-center gap-2'>
@@ -161,20 +204,31 @@ export function CustomerEventsView() {
         </div>
       </div>
 
-      <div className='grid grid-cols-2 gap-3 md:grid-cols-5'>
-        <StatCard label='Total events' value={stats.total} />
-        <StatCard label='Processed' value={stats.byStatus.PROCESSED ?? 0} />
-        <StatCard label='Pending' value={stats.byStatus.PENDING ?? 0} />
-        <StatCard label='Failed' value={stats.byStatus.FAILED ?? 0} variant='danger' />
-        <StatCard label='Coupons granted' value={stats.granted} variant='success' />
-      </div>
-
-      <Card>
+      <Card className='min-w-0 max-w-full'>
         <CardHeader className='flex flex-col gap-3 pb-4 md:flex-row md:items-center md:justify-between'>
           <CardTitle className='text-base'>Events</CardTitle>
-          <div className='flex flex-wrap gap-2'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <div className='relative w-full min-w-[200px] sm:w-[260px]'>
+              <Search className='text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2' />
+              <Input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder='Search email / name / dedupe / coupon...'
+                className='pl-8 pr-8'
+              />
+              {searchInput && (
+                <button
+                  type='button'
+                  onClick={() => setSearchInput('')}
+                  className='text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2'
+                  aria-label='clear search'
+                >
+                  <X className='h-3.5 w-3.5' />
+                </button>
+              )}
+            </div>
             <Select value={type} onValueChange={handleTypeChange}>
-              <SelectTrigger className='w-[200px]'>
+              <SelectTrigger className='w-full min-w-[160px] sm:w-[200px]'>
                 <SelectValue placeholder='All event types' />
               </SelectTrigger>
               <SelectContent>
@@ -187,7 +241,7 @@ export function CustomerEventsView() {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={handleStatusChange}>
-              <SelectTrigger className='w-[160px]'>
+              <SelectTrigger className='w-full min-w-[140px] sm:w-[160px]'>
                 <SelectValue placeholder='All statuses' />
               </SelectTrigger>
               <SelectContent>
@@ -208,16 +262,23 @@ export function CustomerEventsView() {
             </div>
           )}
           <TooltipProvider>
+            <div className='max-h-[calc(100svh-360px)] overflow-y-auto'>
             <Table>
-              <TableHeader>
+              <TableHeader className='bg-background sticky top-0 z-10 shadow-[0_1px_0_0_var(--border)]'>
                 <TableRow>
-                  <TableHead className='w-[170px]'>Occurred</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Granted</TableHead>
-                  <TableHead className='hidden md:table-cell'>Dedupe key</TableHead>
-                  <TableHead className='hidden md:table-cell'>Payload</TableHead>
+                  <TableHead className='w-[150px] min-w-[150px]'>Occurred</TableHead>
+                  <TableHead className='min-w-[140px]'>Type</TableHead>
+                  <TableHead className='min-w-[140px] max-w-[200px]'>
+                    Customer
+                  </TableHead>
+                  <TableHead className='min-w-[100px]'>Status</TableHead>
+                  <TableHead className='min-w-[120px]'>Granted</TableHead>
+                  <TableHead className='hidden lg:table-cell lg:max-w-[220px]'>
+                    Dedupe key
+                  </TableHead>
+                  <TableHead className='hidden xl:table-cell xl:max-w-[260px]'>
+                    Payload
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -234,16 +295,21 @@ export function CustomerEventsView() {
                       {formatTime(ev.occurredAt)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant='outline' className='font-mono text-xs'>
+                      <Badge
+                        variant='outline'
+                        className='whitespace-nowrap font-mono text-[10px]'
+                      >
                         {ev.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className='text-xs'>
-                      <div className='font-medium'>
+                    <TableCell className='max-w-[200px] text-xs'>
+                      <div className='truncate font-medium'>
                         {ev.customerName ?? ev.customerEmail ?? ev.customerId.slice(0, 8)}
                       </div>
                       {ev.customerEmail && ev.customerName && (
-                        <div className='text-muted-foreground'>{ev.customerEmail}</div>
+                        <div className='text-muted-foreground truncate'>
+                          {ev.customerEmail}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -277,20 +343,27 @@ export function CustomerEventsView() {
                         <span className='text-muted-foreground text-xs'>—</span>
                       )}
                     </TableCell>
-                    <TableCell className='hidden md:table-cell'>
-                      <code className='bg-muted rounded px-1.5 py-0.5 font-mono text-[11px]'>
-                        {ev.dedupeKey}
-                      </code>
-                    </TableCell>
-                    <TableCell className='hidden md:table-cell'>
+                    <TableCell className='hidden lg:table-cell lg:max-w-[220px]'>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <code className='bg-muted text-muted-foreground inline-block max-w-[200px] truncate rounded px-1.5 py-0.5 font-mono text-[11px]'>
+                          <code className='bg-muted block max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[11px]'>
+                            {ev.dedupeKey}
+                          </code>
+                        </TooltipTrigger>
+                        <TooltipContent className='max-w-md break-all'>
+                          {ev.dedupeKey}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell className='hidden xl:table-cell xl:max-w-[260px]'>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <code className='bg-muted text-muted-foreground block max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[11px]'>
                             {JSON.stringify(ev.payload)}
                           </code>
                         </TooltipTrigger>
                         <TooltipContent className='max-w-md'>
-                          <pre className='text-[11px] whitespace-pre-wrap'>
+                          <pre className='text-[11px] whitespace-pre-wrap break-all'>
                             {JSON.stringify(ev.payload, null, 2)}
                           </pre>
                         </TooltipContent>
@@ -300,9 +373,10 @@ export function CustomerEventsView() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </TooltipProvider>
 
-          <div className='flex items-center justify-between border-t p-3'>
+          <div className='flex shrink-0 items-center justify-between border-t p-3'>
             <span className='text-muted-foreground text-xs'>
               Page {page} of {totalPages} • {stats.total} events total
             </span>
@@ -331,7 +405,7 @@ export function CustomerEventsView() {
   );
 }
 
-function StatCard({
+function Stat({
   label,
   value,
   variant = 'default'
@@ -345,14 +419,12 @@ function StatCard({
       ? 'text-emerald-600'
       : variant === 'danger'
       ? 'text-destructive'
-      : '';
+      : 'text-foreground';
   return (
-    <Card>
-      <CardContent className='p-4'>
-        <div className='text-muted-foreground text-xs'>{label}</div>
-        <div className={`mt-1 text-2xl font-semibold ${colors}`}>{value}</div>
-      </CardContent>
-    </Card>
+    <span className='inline-flex items-baseline gap-1'>
+      <span>{label}</span>
+      <span className={`font-semibold ${colors}`}>{value}</span>
+    </span>
   );
 }
 

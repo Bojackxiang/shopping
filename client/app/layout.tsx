@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/provider/auth-provider";
 import { ConfirmDialogProvider } from "@/provider/confirm-dialog-provider";
 import { Toaster } from "sonner";
+import PageViewTracker from "@/components/page-view-tracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +34,9 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+          <Suspense fallback={null}>
+            <PageViewTracker />
+          </Suspense>
         </AuthProvider>
         <Toaster
           position="top-center"

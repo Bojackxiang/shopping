@@ -6,8 +6,6 @@ import type {
   FavoriteBasicInfo,
   FavoriteWithProduct,
 } from "@/repo/favorite.repo";
-import { emitCustomerEvent } from "@/lib/events/dispatcher";
-import { CustomerEventType } from "@prisma/client";
 import { serializePrisma } from "@/utils/serialize-prisma";
 
 /**
@@ -104,12 +102,6 @@ export const addFavoriteAction = async (
       productId,
       productData || {},
     );
-
-    await emitCustomerEvent({
-      type: CustomerEventType.FAVORITE_ADDED,
-      customerId: customer.id,
-      payload: { productId, favoriteId: favorite.id },
-    });
 
     return { data: favorite, error: null };
   } catch (error) {
@@ -223,14 +215,6 @@ export const toggleFavoriteAction = async (
       productId,
       productData,
     );
-
-    if (result.isFavorite && result.favorite) {
-      await emitCustomerEvent({
-        type: CustomerEventType.FAVORITE_ADDED,
-        customerId: customer.id,
-        payload: { productId, favoriteId: result.favorite.id },
-      });
-    }
 
     return { data: result, error: null };
   } catch (error) {

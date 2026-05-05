@@ -9,6 +9,11 @@ export type GetCustomerEventsParams = {
   type?: CustomerEventType;
   status?: EventProcessStatus;
   customerId?: string;
+  /**
+   * Free-text search. Matches customer email/firstName/lastName, dedupeKey,
+   * granted coupon code, customerId, and event id (case-insensitive contains).
+   */
+  search?: string;
 };
 
 export type CustomerEventRow = {
@@ -34,13 +39,46 @@ export async function getCustomerEvents(params: GetCustomerEventsParams = {}) {
     pageSize = 25,
     type,
     status,
-    customerId
+    customerId,
+    search
   } = params;
+
+  const trimmed = search?.trim();
+  const searchClause = trimmed
+    ? {
+        OR: [
+          { id: { contains: trimmed, mode: 'insensitive' as const } },
+          { customerId: { contains: trimmed, mode: 'insensitive' as const } },
+          { dedupeKey: { contains: trimmed, mode: 'insensitive' as const } },
+          {
+            customers: {
+              email: { contains: trimmed, mode: 'insensitive' as const }
+            }
+          },
+          {
+            customers: {
+              firstName: { contains: trimmed, mode: 'insensitive' as const }
+            }
+          },
+          {
+            customers: {
+              lastName: { contains: trimmed, mode: 'insensitive' as const }
+            }
+          },
+          {
+            coupons: {
+              code: { contains: trimmed, mode: 'insensitive' as const }
+            }
+          }
+        ]
+      }
+    : undefined;
 
   const where = {
     ...(type && { type }),
     ...(status && { status }),
-    ...(customerId && { customerId })
+    ...(customerId && { customerId }),
+    ...(searchClause ?? {})
   };
 
   const [items, total, statusCounts, grantedTotal] = await Promise.all([
