@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2, Loader2, Router } from 'lucide-react';
+import { Edit2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,7 +25,12 @@ export default function CategoryDetail({
 }: CategoryDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const { handleUpdateCategory, handleDeleteCategory } = useCategoryContext();
+  const {
+    categories,
+    handleUpdateCategory,
+    handleDeactivateCategory,
+    handleActivateCategory
+  } = useCategoryContext();
   const [formData, setFormData] = useState({
     name: category?.name || '',
     slug: category?.slug || '',
@@ -58,25 +63,89 @@ export default function CategoryDetail({
 
   const { confirm } = useConfirmDialog();
 
-  const handleDelete = async () => {
-    await confirm(
+  const countDescendants = (rootId: string) => {
+    let count = 0;
+    let frontier = [rootId];
+    while (frontier.length > 0) {
+      const next = (categories as any[]).filter((c) =>
+        frontier.includes(c.parentId)
+      );
+      count += next.length;
+      frontier = next.map((c) => c.id);
+    }
+    return count;
+  };
+
+  const handleDeactivate = async () => {
+    const descendantCount = countDescendants(category.id);
+    confirm(
       async () => {
         try {
-          await handleDeleteCategory(category.id);
-          onToast('Category deleted successfully');
-          onUpdate();
+          await handleDeactivateCategory(category.id);
+          onToast('Category deactivated');
         } catch (error) {
           onToastError(
-            error instanceof Error ? error.message : 'Error deleting category'
+            error instanceof Error
+              ? error.message
+              : 'Error deactivating category'
           );
         }
       },
       {
-        title: 'Delete Category',
-        description: 'This action cannot be undone.',
-        confirmText: 'Delete',
+        title: 'Deactivate Category',
+        description:
+          descendantCount > 0 ? (
+            <div className='space-y-2'>
+              <p>
+                This will hide{' '}
+                <span className='text-foreground font-medium'>
+                  {category.name}
+                </span>{' '}
+                and{' '}
+                <span className='text-foreground font-medium'>
+                  {descendantCount} descendant
+                  {descendantCount === 1 ? '' : 's'}
+                </span>{' '}
+                from the storefront.
+              </p>
+              <p className='text-muted-foreground text-xs'>
+                You can re-activate them later. Re-activating the parent does
+                not auto-restore descendants.
+              </p>
+            </div>
+          ) : (
+            <p>
+              This will hide this category from the storefront. You can
+              re-activate it later.
+            </p>
+          ),
+        confirmText: 'Deactivate',
         cancelText: 'Cancel',
         variant: 'destructive'
+      }
+    );
+  };
+
+  const handleActivate = async () => {
+    confirm(
+      async () => {
+        try {
+          await handleActivateCategory(category.id);
+          onToast('Category activated');
+        } catch (error) {
+          onToastError(
+            error instanceof Error
+              ? error.message
+              : 'Error activating category'
+          );
+        }
+      },
+      {
+        title: 'Activate Category',
+        description:
+          'Make this category visible on the storefront again. Inactive descendants stay inactive — re-activate them individually if needed.',
+        confirmText: 'Activate',
+        cancelText: 'Cancel'
       }
     );
   };
@@ -116,15 +185,15 @@ export default function CategoryDetail({
                         variant='outline'
                         size='sm'
                         disabled
-                        className='text-destructive pointer-events-none gap-2'
+                        className='pointer-events-none gap-2'
                       >
-                        <Trash2 className='h-4 w-4' />
-                        Delete
+                        <EyeOff className='h-4 w-4' />
+                        Deactivate
                       </Button>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    System category — cannot be deleted.
+                    System category — cannot be deactivated.
                   </TooltipContent>
                 </Tooltip>
               </>
@@ -139,15 +208,27 @@ export default function CategoryDetail({
                   <Edit2 className='h-4 w-4' />
                   Edit
                 </Button>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={handleDelete}
-                  className='text-destructive hover:bg-destructive/10 gap-2'
-                >
-                  <Trash2 className='h-4 w-4' />
-                  Delete
-                </Button>
+                {category.isActive ? (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleDeactivate}
+                    className='text-destructive hover:bg-destructive/10 gap-2'
+                  >
+                    <EyeOff className='h-4 w-4' />
+                    Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleActivate}
+                    className='gap-2'
+                  >
+                    <Eye className='h-4 w-4' />
+                    Activate
+                  </Button>
+                )}
               </>
             )}
           </div>

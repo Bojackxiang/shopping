@@ -24,7 +24,8 @@ interface CategoryContextType {
     id: string,
     data: Partial<categoryType>
   ) => Promise<void>;
-  handleDeleteCategory: (id: string) => Promise<void>;
+  handleDeactivateCategory: (id: string) => Promise<void>;
+  handleActivateCategory: (id: string) => Promise<void>;
 }
 
 const CategoryContext = createContext<CategoryContextType | undefined>(
@@ -47,7 +48,8 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
     mutate: refetch,
     handleAddCategory,
     handleUpdateCategory,
-    handleDeleteCategory
+    handleDeactivateCategory,
+    handleActivateCategory
   } = useCategoryManager();
 
   const selectedCategory = (categories as categories[]).find(
@@ -67,7 +69,8 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
     refetch,
     handleAddCategory,
     handleUpdateCategory,
-    handleDeleteCategory
+    handleDeactivateCategory,
+    handleActivateCategory
   };
 
   return (

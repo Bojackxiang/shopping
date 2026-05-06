@@ -1,17 +1,15 @@
 'use client';
 
 import {
+  activateCategory,
   createCategory,
-  deleteCategory,
+  deactivateCategory,
   getAllCategories,
   updateCategory
 } from '@/repositories';
 import { delay } from '@/utils/delay';
 import useSWR from 'swr';
-import {
-  categoryCreateInputType,
-  categoryType
-} from '../schema/category-schema';
+import { categoryCreateInputType } from '../schema/category-schema';
 import { handleError } from '@/utils';
 
 export const useCategoryManager = () => {
@@ -48,9 +46,18 @@ export const useCategoryManager = () => {
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeactivateCategory = async (id: string) => {
     try {
-      await deleteCategory(id);
+      await deactivateCategory(id);
+      await swrData.mutate();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleActivateCategory = async (id: string) => {
+    try {
+      await activateCategory(id);
       await swrData.mutate();
     } catch (error) {
       throw error;
@@ -64,6 +71,7 @@ export const useCategoryManager = () => {
     isValidating: swrData.isValidating,
     handleAddCategory,
     handleUpdateCategory,
-    handleDeleteCategory
+    handleDeactivateCategory,
+    handleActivateCategory
   };
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, KeyboardEvent } from 'react';
-import { ChevronRight, FolderOpen, Plus } from 'lucide-react';
+import { ChevronRight, FolderOpen, Leaf, Plus } from 'lucide-react';
 import { categoryType } from '../schema/category-schema';
 import { useCategoryContext } from '../context/category-context';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ interface CategoryTreeItemProps {
   setExpandedIds: (ids: Set<string>) => void;
   addingParentId: string | undefined;
   setAddingParentId: (id: string | undefined) => void;
+  keptIds: Set<string> | null;
+  showHidden: boolean;
 }
 
 export default function CategoryTreeItem({
@@ -32,13 +34,19 @@ export default function CategoryTreeItem({
   expandedIds,
   setExpandedIds,
   addingParentId,
-  setAddingParentId
+  setAddingParentId,
+  keptIds,
+  showHidden
 }: CategoryTreeItemProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const children = categories.filter((c) => c.parentId === category.id);
+  const children = categories
+    .filter((c) => c.parentId === category.id)
+    .filter((c) => (keptIds ? keptIds.has(c.id) : true))
+    .filter((c) => showHidden || (c as any).isActive);
   const hasChildren = children.length > 0;
   const isAddingHere = addingParentId === category.id;
   const isSelected = selectedId === category.id;
+  const isInactive = !category.isActive;
 
   const handleAddChildClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,9 +67,12 @@ export default function CategoryTreeItem({
         className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-colors ${
           isSelected
             ? 'bg-primary text-primary-foreground'
-            : 'text-foreground hover:bg-muted'
+            : isInactive
+              ? 'text-muted-foreground hover:bg-muted'
+              : 'text-foreground hover:bg-muted'
         }`}
         style={{ marginLeft: `${level * 12}px` }}
+        title={isInactive ? 'Inactive' : undefined}
       >
         {hasChildren ? (
           <button
@@ -80,8 +91,25 @@ export default function CategoryTreeItem({
         ) : (
           <div className='w-4' />
         )}
-        <FolderOpen className='h-4 w-4 flex-shrink-0' />
-        <span className='flex-1 truncate text-sm'>{category.name}</span>
+        {hasChildren ? (
+          <FolderOpen
+            className={`h-4 w-4 flex-shrink-0 ${isInactive ? 'opacity-50' : ''}`}
+          />
+        ) : (
+          <Leaf
+            className={`h-4 w-4 flex-shrink-0 ${isInactive ? 'opacity-50' : ''}`}
+          />
+        )}
+        <span
+          className={`flex-1 truncate text-sm ${isInactive ? 'line-through' : ''}`}
+        >
+          {category.name}
+        </span>
+        {isInactive && !isSelected && (
+          <span className='border-muted-foreground/30 text-muted-foreground rounded border px-1.5 py-0.5 text-[10px] uppercase'>
+            Inactive
+          </span>
+        )}
         {isHovered && !isAddingHere && (
           <button
             onClick={handleAddChildClick}
@@ -114,6 +142,8 @@ export default function CategoryTreeItem({
                 setExpandedIds={setExpandedIds}
                 addingParentId={addingParentId}
                 setAddingParentId={setAddingParentId}
+                keptIds={keptIds}
+                showHidden={showHidden}
               />
             ))}
           {isAddingHere && (
@@ -181,7 +211,7 @@ export function InlineCategoryInput({
       style={{ marginLeft: `${level * 12}px` }}
     >
       <div className='w-4' />
-      <FolderOpen className='text-muted-foreground h-4 w-4 flex-shrink-0' />
+      <Leaf className='text-muted-foreground h-4 w-4 flex-shrink-0' />
       <Input
         autoFocus
         value={name}

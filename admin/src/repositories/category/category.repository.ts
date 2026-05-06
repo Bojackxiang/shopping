@@ -75,7 +75,7 @@ async function updateChildrenPaths(parentId: string, newParentPath: string) {
 
 async function validateCategoryNotProtected(
   id: string,
-  operation: 'update' | 'delete'
+  operation: 'update' | 'delete' | 'deactivate' | 'activate'
 ) {
   const category = await db.categories.findUnique({
     where: { id },
@@ -380,6 +380,58 @@ export const deleteCategory = async (id: string) => {
     });
 
     return category;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Deactivate a category and all of its descendants by flipping isActive to
+ * false. Protected categories are blocked. Returns the count of rows
+ * updated (including the category itself).
+ */
+export const deactivateCategory = async (id: string) => {
+  try {
+    await validateCategoryNotProtected(id, 'deactivate');
+
+    const idsToDeactivate: string[] = [id];
+    let frontier: string[] = [id];
+    while (frontier.length > 0) {
+      const children = await db.categories.findMany({
+        where: { parentId: { in: frontier } },
+        select: { id: true }
+      });
+      if (children.length === 0) break;
+      const childIds = children.map((c) => c.id);
+      idsToDeactivate.push(...childIds);
+      frontier = childIds;
+    }
+
+    const result = await db.categories.updateMany({
+      where: { id: { in: idsToDeactivate } },
+      data: { isActive: false, updatedAt: new Date() }
+    });
+
+    return { success: true, count: result.count };
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Activate a single category. Does not cascade — descendants stay
+ * inactive and the user re-activates them manually.
+ */
+export const activateCategory = async (id: string) => {
+  try {
+    await validateCategoryNotProtected(id, 'activate');
+
+    const updated = await db.categories.update({
+      where: { id },
+      data: { isActive: true, updatedAt: new Date() }
+    });
+
+    return { success: true, data: updated };
   } catch (error) {
     throw handleError(error);
   }

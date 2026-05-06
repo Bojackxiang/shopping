@@ -148,20 +148,40 @@ export const updateTag = async (id: string, data: UpdateTagInput) => {
 };
 
 /**
- * Delete a tag (soft delete)
+ * Hard-delete a tag. Related product_tags rows are removed automatically
+ * via the schema's onDelete: Cascade on the tagId foreign key.
  * @param id 标签 ID
- * @returns 更新后的标签
+ * @returns 已删除的标签
  */
 export const deleteTag = async (id: string) => {
   try {
-    const tag = await db.tags.update({
-      where: { id },
-      data: {
-        isActive: false
-      }
+    const tag = await db.tags.delete({
+      where: { id }
     });
 
     return tag;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Get products that reference a given tag.
+ * @param tagId 标签 ID
+ * @returns 引用该标签的产品 [{ id, name }]
+ */
+export const getTagProductReferences = async (
+  tagId: string
+): Promise<Array<{ id: string; name: string }>> => {
+  try {
+    const rows = await db.product_tags.findMany({
+      where: { tagId },
+      select: {
+        products: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+    return rows.map((r) => r.products);
   } catch (error) {
     throw handleError(error);
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => Promise<void> | void;
@@ -55,8 +55,8 @@ export function ConfirmDialog({
           <AlertDialogTitle className='text-xl font-semibold'>
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className='text-muted-foreground'>
-            {description}
+          <AlertDialogDescription asChild>
+            <div className='text-muted-foreground text-sm'>{description}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className='gap-2 sm:gap-2'>
