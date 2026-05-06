@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/prisma';
-import { CouponType } from '@prisma/client';
+import { CouponType, CustomerEventType, Prisma } from '@prisma/client';
 
 /**
  * 查询参数类型（给 Coupon List Page 用）
@@ -58,6 +58,7 @@ export async function getCoupons(params: CouponListParams) {
         startDate: true,
         endDate: true,
         isActive: true,
+        triggerEvent: true,
         createdAt: true
       }
     }),
@@ -117,6 +118,9 @@ export async function createCoupon(data: {
   startDate: Date;
   endDate: Date;
   isActive?: boolean;
+  triggerEvent?: CustomerEventType | null;
+  triggerCondition?: Record<string, unknown> | null;
+  audienceFilter?: Record<string, unknown> | null;
 }) {
   const coupon = await db.coupons.create({
     data: {
@@ -130,7 +134,10 @@ export async function createCoupon(data: {
       usageLimitPerCustomer: data.usageLimitPerCustomer,
       startDate: data.startDate,
       endDate: data.endDate,
-      isActive: data.isActive ?? true
+      isActive: data.isActive ?? true,
+      triggerEvent: data.triggerEvent ?? null,
+      triggerCondition: (data.triggerCondition ?? Prisma.DbNull) as Prisma.InputJsonValue,
+      audienceFilter: (data.audienceFilter ?? Prisma.DbNull) as Prisma.InputJsonValue
     }
   });
 
@@ -149,6 +156,9 @@ export async function createCoupon(data: {
     startDate: coupon.startDate.toISOString(),
     endDate: coupon.endDate.toISOString(),
     isActive: coupon.isActive,
+    triggerEvent: coupon.triggerEvent,
+    triggerCondition: coupon.triggerCondition,
+    audienceFilter: coupon.audienceFilter,
     createdAt: coupon.createdAt.toISOString(),
     updatedAt: coupon.updatedAt.toISOString()
   };
@@ -170,11 +180,24 @@ export async function updateCoupon(
     startDate: Date;
     endDate: Date;
     isActive: boolean;
+    triggerEvent: CustomerEventType | null;
+    triggerCondition: Record<string, unknown> | null;
+    audienceFilter: Record<string, unknown> | null;
   }>
 ) {
+  const { triggerCondition, audienceFilter, triggerEvent, ...rest } = data;
   const coupon = await db.coupons.update({
     where: { id },
-    data
+    data: {
+      ...rest,
+      ...(triggerEvent !== undefined && { triggerEvent }),
+      ...(triggerCondition !== undefined && {
+        triggerCondition: (triggerCondition ?? Prisma.DbNull) as Prisma.InputJsonValue
+      }),
+      ...(audienceFilter !== undefined && {
+        audienceFilter: (audienceFilter ?? Prisma.DbNull) as Prisma.InputJsonValue
+      })
+    }
   });
 
   // 序列化 Decimal 和 Date 类型

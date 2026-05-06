@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/birthday-coupons",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/event-replay",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

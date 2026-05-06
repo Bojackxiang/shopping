@@ -2,6 +2,7 @@
 
 import { CategoryRepo } from "@/repo";
 import { ProductRepo } from "@/repo/product.repo";
+import { serializePrisma as serializeProducts } from "@/utils/serialize-prisma";
 
 /**
  * Deep convert a Prisma-shaped object tree into plain JS values safe to send

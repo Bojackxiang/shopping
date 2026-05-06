@@ -179,7 +179,16 @@ const CouponListView = () => {
         usageLimit: anyToNumber(data.usageLimit),
         usageLimitPerCustomer: anyToNumber(data.usageLimitPerCustomer),
         startDate: anyToDate(data.startDate),
-        endDate: anyToDate(data.endDate)
+        endDate: anyToDate(data.endDate),
+        triggerEvent: data.triggerEnabled ? data.triggerEvent : null,
+        triggerCondition:
+          data.triggerEnabled && hasContent(data.triggerCondition)
+            ? data.triggerCondition
+            : null,
+        audienceFilter:
+          data.triggerEnabled && hasContent(data.audienceFilter)
+            ? data.audienceFilter
+            : null
       });
 
       // 关闭 modal
@@ -206,7 +215,16 @@ const CouponListView = () => {
         usageLimitPerCustomer: anyToNumber(data.usageLimitPerCustomer),
         startDate: anyToDate(data.startDate),
         endDate: anyToDate(data.endDate),
-        isActive: data.isActive
+        isActive: data.isActive,
+        triggerEvent: data.triggerEnabled ? data.triggerEvent : null,
+        triggerCondition:
+          data.triggerEnabled && hasContent(data.triggerCondition)
+            ? data.triggerCondition
+            : null,
+        audienceFilter:
+          data.triggerEnabled && hasContent(data.audienceFilter)
+            ? data.audienceFilter
+            : null
       });
 
       setIsCreateModalOpen(false);
@@ -627,6 +645,18 @@ type Coupon = {
 const calculateUsageRate = (used: number, issued: number | null) => {
   if (!issued || issued === 0) return 0;
   return (used / issued) * 100;
+};
+
+const hasContent = (
+  obj: Record<string, number | boolean | undefined> | undefined | null
+) => {
+  if (!obj) return false;
+  return Object.values(obj).some(
+    (v) =>
+      v !== undefined &&
+      v !== null &&
+      !(typeof v === 'number' && Number.isNaN(v))
+  );
 };
 
 const formatCouponType = (type: string) => {

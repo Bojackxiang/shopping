@@ -3,7 +3,9 @@
 import type React from 'react';
 
 import { useState, useEffect, use } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FormProvider } from 'react-hook-form';
+import { CustomerEventType } from '@prisma/client';
+import { TriggerFields } from './trigger-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +56,10 @@ export type FormData = {
   startDate: string;
   endDate: string;
   isActive: boolean;
+  triggerEnabled: boolean;
+  triggerEvent: CustomerEventType | null;
+  triggerCondition: Record<string, number | boolean | undefined>;
+  audienceFilter: Record<string, number | boolean | undefined>;
 };
 
 export function CreateCouponModal({
@@ -62,14 +68,7 @@ export function CreateCouponModal({
   onCreate,
   onUpdate
 }: CreateCouponModalProps) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-    reset
-  } = useForm<FormData>({
+  const formMethods = useForm<FormData>({
     defaultValues: {
       code: '',
       description: '',
@@ -81,9 +80,21 @@ export function CreateCouponModal({
       usageLimitPerCustomer: 1,
       startDate: '',
       endDate: '',
-      isActive: true
+      isActive: true,
+      triggerEnabled: false,
+      triggerEvent: null,
+      triggerCondition: {},
+      audienceFilter: {}
     }
   });
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+    reset
+  } = formMethods;
 
   const [couponId] = useQueryState('couponId');
   const [editorMode] = useQueryState('mode');
@@ -99,6 +110,12 @@ export function CreateCouponModal({
   // if mode == create, reset to default values
   useEffect(() => {
     if (isEditMode && coupon) {
+      const triggerEvent = (coupon as { triggerEvent?: CustomerEventType | null })
+        .triggerEvent ?? null;
+      const triggerCondition = ((coupon as { triggerCondition?: unknown })
+        .triggerCondition ?? {}) as Record<string, number | boolean | undefined>;
+      const audienceFilter = ((coupon as { audienceFilter?: unknown })
+        .audienceFilter ?? {}) as Record<string, number | boolean | undefined>;
       reset({
         code: coupon.code,
         description: coupon.description || '',
@@ -114,7 +131,11 @@ export function CreateCouponModal({
         endDate: coupon.endDate
           ? new Date(coupon.endDate).toISOString().slice(0, 16)
           : '',
-        isActive: coupon.isActive
+        isActive: coupon.isActive,
+        triggerEnabled: triggerEvent !== null,
+        triggerEvent,
+        triggerCondition,
+        audienceFilter
       });
     } else if (!isEditMode && open) {
       reset({
@@ -128,7 +149,11 @@ export function CreateCouponModal({
         usageLimitPerCustomer: 1,
         startDate: '',
         endDate: '',
-        isActive: true
+        isActive: true,
+        triggerEnabled: false,
+        triggerEvent: null,
+        triggerCondition: {},
+        audienceFilter: {}
       });
     }
   }, [isEditMode, coupon, open, reset]);
@@ -168,6 +193,7 @@ export function CreateCouponModal({
         ) : (
           <ScrollArea className='max-h-[calc(90vh-140px)] pr-4'>
             <TooltipProvider>
+              <FormProvider {...formMethods}>
               <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
                 {/* Section 1: Basic Information */}
                 <Card>
@@ -507,6 +533,21 @@ export function CreateCouponModal({
                   </CardContent>
                 </Card>
 
+                {/* Section 4: Auto-Grant Trigger */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className='text-base sm:text-lg'>
+                      Auto-Grant Trigger
+                    </CardTitle>
+                    <CardDescription>
+                      Automatically issue this coupon when a customer hits a chosen event.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TriggerFields />
+                  </CardContent>
+                </Card>
+
                 {/* Footer Actions */}
                 <div className='border-border flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-end'>
                   <Button
@@ -544,6 +585,7 @@ export function CreateCouponModal({
                   </Button>
                 </div>
               </form>
+              </FormProvider>
             </TooltipProvider>
           </ScrollArea>
         )}

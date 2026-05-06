@@ -74,26 +74,29 @@ model categories {
 }
 
 model customers {
-  id             String           @id @default(cuid())
-  clerkId        String           @unique
-  email          String           @unique
-  firstName      String?
-  lastName       String?
-  username       String?
-  imageUrl       String?
-  phone          String?
-  role           String           @default("customer")
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  addresses      addresses[]
-  carts          carts?
-  favorites      favorites[]
-  orders         orders[]
-  reviews        reviews[]
-  wishlist_items wishlist_items[]
+  id              String            @id @default(cuid())
+  clerkId         String            @unique
+  email           String            @unique
+  firstName       String?
+  lastName        String?
+  username        String?
+  imageUrl        String?
+  phone           String?
+  role            String            @default("customer")
+  birthday        DateTime?         @db.Date
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  addresses       addresses[]
+  carts           carts?
+  favorites       favorites[]
+  orders          orders[]
+  reviews         reviews[]
+  wishlist_items  wishlist_items[]
+  customer_events customer_events[]
 
   @@index([clerkId])
   @@index([email])
+  @@index([birthday])
 }
 
 model order_items {
@@ -400,28 +403,33 @@ model promotion_products {
 }
 
 model coupons {
-  id                    String          @id @default(uuid())
-  code                  String          @unique
+  id                    String             @id @default(uuid())
+  code                  String             @unique
   description           String?
   type                  CouponType
-  value                 Decimal         @db.Decimal(10, 2)
-  minPurchase           Decimal?        @db.Decimal(10, 2)
-  maxDiscount           Decimal?        @db.Decimal(10, 2)
+  value                 Decimal            @db.Decimal(10, 2)
+  minPurchase           Decimal?           @db.Decimal(10, 2)
+  maxDiscount           Decimal?           @db.Decimal(10, 2)
   usageLimit            Int?
   usageLimitPerCustomer Int?
-  usageCount            Int             @default(0)
+  usageCount            Int                @default(0)
   startDate             DateTime
   endDate               DateTime
-  isActive              Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  isActive              Boolean            @default(true)
+  triggerEvent          CustomerEventType?
+  triggerCondition      Json?
+  audienceFilter        Json?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
   coupon_usages         coupon_usages[]
   orders                orders[]
+  customer_events       customer_events[]
 
   @@index([code])
   @@index([isActive])
   @@index([startDate])
   @@index([endDate])
+  @@index([triggerEvent, isActive])
 }
 
 model coupon_usages {
@@ -508,4 +516,59 @@ enum RelationType {
   RELATED
   UPSELL
   CROSS_SELL
+}
+
+enum CustomerEventType {
+  USER_SIGNUP
+  USER_LOGIN
+  PAGE_VIEWED
+  SORT_CHANGED
+  FILTER_CHANGED
+  SEARCH_PERFORMED
+  CART_MODAL_OPENED
+  FAVORITE_ADDED
+  FAVORITE_REMOVED
+  CART_ITEM_ADDED
+  CART_ITEM_QUANTITY_CHANGED
+  CART_ITEM_REMOVED
+  ADDRESS_SAVED
+  ADDRESS_REMOVED
+  ORDER_CREATED
+  ORDER_PAID
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  REVIEW_SUBMITTED
+  REVIEW_APPROVED
+  BIRTHDAY
+  MILESTONE_TOTAL_SPENT
+  MILESTONE_ORDER_COUNT
+}
+
+enum EventProcessStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+model customer_events {
+  id               String             @id @default(cuid())
+  customerId       String
+  type             CustomerEventType
+  dedupeKey        String
+  payload          Json
+  status           EventProcessStatus @default(PENDING)
+  grantedCouponId  String?
+  grantedExpiresAt DateTime?
+  occurredAt       DateTime           @default(now())
+  processedAt      DateTime?
+  errorMessage     String?
+  customer         customers          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  grantedCoupon    coupons?           @relation(fields: [grantedCouponId], references: [id], onDelete: SetNull)
+
+  @@unique([type, dedupeKey])
+  @@index([customerId, type])
+  @@index([status, occurredAt])
+  @@index([customerId, grantedCouponId])
+  @@index([occurredAt])
 }

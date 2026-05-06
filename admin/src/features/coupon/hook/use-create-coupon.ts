@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { mutate } from 'swr';
 import { createCoupon } from '@/repositories/coupons/coupon';
-import { CouponType } from '@prisma/client';
+import { CouponType, CustomerEventType } from '@prisma/client';
 import { delay } from '@/utils/delay';
 
 export type CreateCouponData = {
@@ -17,6 +17,9 @@ export type CreateCouponData = {
   usageLimitPerCustomer?: number;
   startDate: Date;
   endDate: Date;
+  triggerEvent?: CustomerEventType | null;
+  triggerCondition?: Record<string, unknown> | null;
+  audienceFilter?: Record<string, unknown> | null;
 };
 
 export type UseCreateCouponReturn = {

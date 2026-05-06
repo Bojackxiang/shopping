@@ -3,7 +3,7 @@
 import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
 import { updateCoupon } from '@/repositories/coupons/coupon';
-import { CouponType } from '@prisma/client';
+import { CouponType, CustomerEventType } from '@prisma/client';
 
 export type UpdateCouponData = {
   id: string;
@@ -17,6 +17,9 @@ export type UpdateCouponData = {
   startDate?: Date;
   endDate?: Date;
   isActive?: boolean;
+  triggerEvent?: CustomerEventType | null;
+  triggerCondition?: Record<string, unknown> | null;
+  audienceFilter?: Record<string, unknown> | null;
 };
 
 export function useUpdateCoupon() {

@@ -74,25 +74,29 @@ model categories {
 }
 
 model customers {
-  id             String           @id @default(cuid())
-  clerkId        String           @unique
-  email          String           @unique
-  firstName      String?
-  lastName       String?
-  username       String?
-  imageUrl       String?
-  phone          String?
-  role           String           @default("customer")
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  addresses      addresses[]
-  carts          carts?
-  orders         orders[]
-  reviews        reviews[]
-  wishlist_items wishlist_items[]
+  id              String            @id @default(cuid())
+  clerkId         String            @unique
+  email           String            @unique
+  firstName       String?
+  lastName        String?
+  username        String?
+  imageUrl        String?
+  phone           String?
+  role            String            @default("customer")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  birthday        DateTime?         @db.Date
+  addresses       addresses[]
+  carts           carts?
+  customer_events customer_events[]
+  favorites       favorites[]
+  orders          orders[]
+  reviews         reviews[]
+  wishlist_items  wishlist_items[]
 
   @@index([clerkId])
   @@index([email])
+  @@index([birthday])
 }
 
 model order_items {
@@ -193,6 +197,7 @@ model products {
   thumbnail          String?
   viewCount          Int                  @default(0)
   wishlistCount      Int                  @default(0)
+  favorites          favorites[]
   categories         product_categories[]
   product_faqs       product_faqs[]
   product_images     product_images[]
@@ -377,28 +382,33 @@ model promotion_products {
 }
 
 model coupons {
-  id                    String          @id @default(uuid())
-  code                  String          @unique
+  id                    String             @id @default(uuid())
+  code                  String             @unique
   description           String?
   type                  CouponType
-  value                 Decimal         @db.Decimal(10, 2)
-  minPurchase           Decimal?        @db.Decimal(10, 2)
-  maxDiscount           Decimal?        @db.Decimal(10, 2)
+  value                 Decimal            @db.Decimal(10, 2)
+  minPurchase           Decimal?           @db.Decimal(10, 2)
+  maxDiscount           Decimal?           @db.Decimal(10, 2)
   usageLimit            Int?
   usageLimitPerCustomer Int?
-  usageCount            Int             @default(0)
+  usageCount            Int                @default(0)
   startDate             DateTime
   endDate               DateTime
-  isActive              Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  isActive              Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  audienceFilter        Json?
+  triggerCondition      Json?
+  triggerEvent          CustomerEventType?
   coupon_usages         coupon_usages[]
+  customer_events       customer_events[]
   orders                orders[]
 
   @@index([code])
   @@index([isActive])
   @@index([startDate])
   @@index([endDate])
+  @@index([triggerEvent, isActive])
 }
 
 model coupon_usages {
@@ -444,6 +454,49 @@ model related_products {
   @@index([type])
 }
 
+model customer_events {
+  id               String             @id @default(cuid())
+  customerId       String
+  type             CustomerEventType
+  dedupeKey        String
+  payload          Json
+  status           EventProcessStatus @default(PENDING)
+  grantedCouponId  String?
+  grantedExpiresAt DateTime?
+  occurredAt       DateTime           @default(now())
+  processedAt      DateTime?
+  errorMessage     String?
+  customers        customers          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  coupons          coupons?           @relation(fields: [grantedCouponId], references: [id])
+
+  @@unique([type, dedupeKey])
+  @@index([customerId, grantedCouponId])
+  @@index([customerId, type])
+  @@index([occurredAt])
+  @@index([status, occurredAt])
+}
+
+model favorites {
+  id           String    @id
+  customerId   String
+  productId    String?
+  productName  String?
+  productSlug  String?
+  productImage String?
+  variantId    String?
+  variantName  String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+  customers    customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  products     products? @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, productId], map: "favorites_customer_product_unique")
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([productId])
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -485,4 +538,37 @@ enum RelationType {
   RELATED
   UPSELL
   CROSS_SELL
+}
+
+enum CustomerEventType {
+  USER_SIGNUP
+  FAVORITE_ADDED
+  ORDER_CREATED
+  ORDER_PAID
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  REVIEW_SUBMITTED
+  REVIEW_APPROVED
+  BIRTHDAY
+  MILESTONE_TOTAL_SPENT
+  MILESTONE_ORDER_COUNT
+  USER_LOGIN
+  FAVORITE_REMOVED
+  CART_ITEM_ADDED
+  CART_ITEM_QUANTITY_CHANGED
+  CART_ITEM_REMOVED
+  ADDRESS_SAVED
+  ADDRESS_REMOVED
+  PAGE_VIEWED
+  SORT_CHANGED
+  FILTER_CHANGED
+  SEARCH_PERFORMED
+  CART_MODAL_OPENED
+}
+
+enum EventProcessStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  SKIPPED
 }

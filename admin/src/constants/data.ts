@@ -83,6 +83,12 @@ export const navItems: NavItem[] = [
         shortcut: ['m', 'm']
       },
       {
+        title: 'Event Log',
+        url: '/dashboard/coupons/events',
+        icon: 'couponTracking',
+        shortcut: ['m', 'm']
+      },
+      {
         title: 'Coupon Distribution',
         url: '/dashboard/coupon/distribution',
         icon: 'couponDistribution',

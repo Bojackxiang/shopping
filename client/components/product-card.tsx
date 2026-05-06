@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Heart } from "lucide-react";
 import { prismaType } from "@/types";
 import { useRouter } from "next/navigation";
 import { linkToProductDetail } from "@/utils";
 import Image from "next/image";
+import { useToggleFavorite, useCheckIsFavorite } from "@/hooks/use-favourite";
 
 interface ProductCardProps {
   product: prismaType.ProductWithVariants;
@@ -29,7 +29,8 @@ function formatPrice(price: unknown): string {
 export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
 
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, mutate: refreshIsFavorite } = useCheckIsFavorite(product.id);
+  const { toggleFavorite, isLoading: toggling } = useToggleFavorite();
 
   // 找到 isDefault 为 true 的 variant，如果没有则取第一个
   const defaultVariant =
@@ -40,8 +41,25 @@ export default function ProductCard({ product }: ProductCardProps) {
     router.push(linkToProductDetail(product.id));
   };
 
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (toggling) return;
+    try {
+      await toggleFavorite(product.id, {
+        productName: product.name,
+        productSlug: product.slug,
+        productImage: product.thumbnail ?? undefined,
+        variantId: defaultVariant?.id,
+        variantName: defaultVariant?.name ?? undefined,
+      });
+      refreshIsFavorite();
+    } catch {
+      /* toast already shown by hook */
+    }
+  };
+
   return (
-    <div className="group cursor-pointer" onClick={goToProductDetailPage}>
+    <div className="group cursor-pointer relative" onClick={goToProductDetailPage}>
       <div className="relative w-full aspect-square overflow-hidden rounded-md">
         <Image
           src={product.thumbnail || "/placeholder.svg"}
@@ -52,8 +70,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         />
       </div>
       <button
-        onClick={() => setIsFavorite(!isFavorite)}
-        className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:scale-110 transition-transform"
+        onClick={handleToggleFavorite}
+        disabled={toggling}
+        className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-60"
       >
         <Heart
           className={`w-5 h-5 ${

@@ -27,6 +27,7 @@ import { handleDecimal, handleEmptyArray, toStringOrEmpty } from "@/utils";
 import useCart, { AddToCartInput } from "../hooks/use-cart";
 import useSWR from "swr";
 import { fetchCartItemCountByVariantAction } from "@/app/actions/cart.action";
+import { useToggleFavorite, useCheckIsFavorite } from "@/hooks/use-favourite";
 
 interface Product {
   id: number;
@@ -69,7 +70,6 @@ export const ProductDetailView = ({
   // state
   // =================================
   const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const [selectedVariant, setSelectedVariant] =
     useState<product_variants | null>(null);
@@ -82,6 +82,8 @@ export const ProductDetailView = ({
   const { selectedImage, setSelectedImage, nextImage, prevImage, setShowZoom } =
     useGallery(data?.product_images?.length || 1);
   const { addToCart } = useCart();
+  const { isFavorite, mutate: refreshIsFavorite } = useCheckIsFavorite(productId);
+  const { toggleFavorite, isLoading: toggling } = useToggleFavorite();
 
   // =================================
   // handlers
@@ -102,6 +104,22 @@ export const ProductDetailView = ({
   // Use AddToCartInput interface for cart input
   const handleAddingToCart = async (input: AddToCartInput) => {
     await addToCart(input);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!data || toggling) return;
+    try {
+      await toggleFavorite(productId, {
+        productName: data.name,
+        productSlug: data.slug,
+        productImage: data.thumbnail ?? undefined,
+        variantId: selectedVariant?.id ?? undefined,
+        variantName: selectedVariant?.name ?? undefined,
+      });
+      refreshIsFavorite();
+    } catch {
+      /* toast already shown by hook */
+    }
   };
 
   // =================================
@@ -208,8 +226,9 @@ export const ProductDetailView = ({
                     <Share2 className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                    onClick={handleToggleFavorite}
+                    disabled={toggling}
+                    className="p-2 hover:bg-secondary rounded-lg transition-colors disabled:opacity-60"
                   >
                     <Heart
                       className={`w-5 h-5 ${

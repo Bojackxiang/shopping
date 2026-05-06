@@ -6,6 +6,7 @@ import type {
   FavoriteBasicInfo,
   FavoriteWithProduct,
 } from "@/repo/favorite.repo";
+import { serializePrisma } from "@/utils/serialize-prisma";
 
 /**
  * Fetch all user favorites
@@ -26,7 +27,7 @@ export const fetchUserFavoritesAction = async () => {
 
     const favorites = await Favorite.getFavoritesByCustomerId(customer.id);
 
-    return { data: favorites, error: null };
+    return { data: serializePrisma(favorites), error: null };
   } catch (error) {
     console.error("Error fetching user favorites:", error);
     return {
